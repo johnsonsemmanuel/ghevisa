@@ -41,7 +41,7 @@ export default function StaffLoginPage() {
     try {
       await login(email, password);
       const user = JSON.parse(localStorage.getItem("user") || "{}");
-      
+
       // Check if user is staff (GIS or MFA)
       const staffRoles = [
         "GIS_REVIEWING_OFFICER", "GIS_APPROVAL_OFFICER", "GIS_ADMIN",
@@ -54,7 +54,7 @@ export default function StaffLoginPage() {
         toast.error("Access denied. This portal is for GIS and MFA staff only.");
         return;
       }
-      
+
       toast.success("Authentication successful");
       router.push(roleRedirect[user.role] || "/dashboard/gis");
     } catch (err: unknown) {
@@ -158,8 +158,34 @@ export default function StaffLoginPage() {
             Enter your staff credentials to access the portal
           </p>
 
-          
+
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex gap-2 justify-end mb-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setEmail("kmensah@gis.gov.gh");
+                  setPassword("password");
+                }}
+                className="text-xs"
+              >
+                Demo: GIS
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setEmail("aadjei@mfa.gov.gh");
+                  setPassword("password");
+                }}
+                className="text-xs"
+              >
+                Demo: MFA
+              </Button>
+            </div>
             <Input
               label="Staff Email"
               type="email"

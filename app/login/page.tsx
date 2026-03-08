@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       const user = JSON.parse(localStorage.getItem("user") || "{}");
-      
+
       // Check if user is applicant - redirect others to appropriate portals
       const applicantRoles = ["applicant", "APPLICANT"];
       if (!applicantRoles.includes(user.role)) {
@@ -40,7 +40,7 @@ export default function LoginPage() {
         }
         return;
       }
-      
+
       toast.success("Authentication successful");
       router.push("/dashboard/applicant");
     } catch (err: unknown) {
@@ -129,7 +129,7 @@ export default function LoginPage() {
             </Button>
           </Link>
         </div>
-        
+
         <div className="w-full max-w-md mt-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
@@ -147,8 +147,22 @@ export default function LoginPage() {
             Enter credentials to access your visa applications
           </p>
 
-          
+
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex justify-end mb-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setEmail("fatima@example.com");
+                  setPassword("password");
+                }}
+                className="text-xs"
+              >
+                Demo: Applicant
+              </Button>
+            </div>
             <Input
               label="Email Address"
               type="email"

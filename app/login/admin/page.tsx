@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
     try {
       await login(email, password);
       const user = JSON.parse(localStorage.getItem("user") || "{}");
-      
+
       // Check if user is admin
       if (user.role !== "admin") {
         localStorage.removeItem("token");
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
         toast.error("Access denied. This portal is for administrators only.");
         return;
       }
-      
+
       toast.success("Authentication successful");
       router.push("/dashboard/admin");
     } catch (err: unknown) {
@@ -137,6 +137,20 @@ export default function AdminLoginPage() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex justify-end mb-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setEmail("admin@ghevisa.gov.gh");
+                  setPassword("password");
+                }}
+                className="text-xs"
+              >
+                Demo: System Admin
+              </Button>
+            </div>
             <Input
               label="Admin Email"
               type="email"
