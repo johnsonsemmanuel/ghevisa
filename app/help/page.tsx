@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   CreditCard,
+  ExternalLink,
 } from "lucide-react";
 
 const faqs = [
@@ -93,15 +94,14 @@ export default function HelpPage() {
                 { label: "Home", href: "/" },
                 { label: "Visa Types", href: "/#visa-types" },
                 { label: "Visa Requirements", href: "/visa-requirements" },
-                { label: "Track Application", href: "/track" },
+                { label: "Track Application", href: "/#track-application" },
                 { label: "Help", href: "/help", active: true },
               ].map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-colors ${
-                    item.active ? "text-[#006B3F] bg-[#006B3F]/5" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-colors ${item.active ? "text-[#006B3F] bg-[#006B3F]/5" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                 >
                   {item.label}
                 </Link>
@@ -119,7 +119,7 @@ export default function HelpPage() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 shadow-xl animate-slide-down">
             <div className="px-5 py-4 space-y-1">
-              {["Home|/", "Visa Types|/#visa-types", "Visa Requirements|/visa-requirements", "Track Application|/track", "Help|/help"].map((item) => {
+              {["Home|/", "Visa Types|/#visa-types", "Visa Requirements|/visa-requirements", "Track Application|/#track-application", "Help|/help"].map((item) => {
                 const [label, href] = item.split("|");
                 return <Link key={href} href={href} onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">{label}</Link>;
               })}
@@ -186,11 +186,10 @@ export default function HelpPage() {
               <button
                 key={cat.category}
                 onClick={() => { setActiveCategory(cat.category); setOpenFaq(null); }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                  activeCategory === cat.category
-                    ? "bg-[#006B3F] text-white shadow-lg shadow-[#006B3F]/20"
-                    : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${activeCategory === cat.category
+                  ? "bg-[#006B3F] text-white shadow-lg shadow-[#006B3F]/20"
+                  : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {cat.category}
               </button>
@@ -225,22 +224,7 @@ export default function HelpPage() {
         </div>
       </section>
 
-      {/* Important Notice */}
-      <section className="py-8">
-        <div className="max-w-4xl mx-auto px-5">
-          <div className="bg-[#FFF8E7] rounded-xl border border-[#C8962E]/20 p-5">
-            <div className="flex items-start gap-3">
-              <AlertTriangle size={18} className="text-[#C8962E] shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-bold text-[#8B6914] text-sm mb-1">Official Government Notice</h3>
-                <p className="text-sm text-[#8B6914]/80 leading-relaxed">
-                  This is the official electronic visa portal of the Ghana Immigration Service. All visa applications are processed by the Ghana Immigration Service. Beware of fraudulent websites claiming to offer Ghana visa services.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* Contact Section */}
       <section id="contact" className="py-12">
@@ -298,61 +282,96 @@ export default function HelpPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 py-12 mt-8">
+      {/* ═══════════════════ FOOTER ═══════════════════ */}
+      <footer className="bg-gray-900 text-white pt-16 pb-8">
+        {/* Ghana flag accent strip */}
+        <div className="flex h-1 mb-12">
+          <div className="flex-1 bg-[#CE1126]" />
+          <div className="flex-1 bg-[#C8962E]" />
+          <div className="flex-1 bg-[#006B3F]" />
+        </div>
+
         <div className="max-w-7xl mx-auto px-5 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-            <div className="col-span-2 md:col-span-1">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+            {/* Brand */}
+            <div>
               <div className="flex items-center gap-3 mb-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/gis-logo.png" alt="Republic of Ghana" width={36} height={36} className="opacity-80" />
+                <img src="/gis-logo.png" alt="Ghana" width={36} height={36} className="opacity-80" />
                 <div>
-                  <p className="font-bold text-white text-sm">Republic of Ghana</p>
-                  <p className="text-gray-500 text-[10px] uppercase tracking-wider">e-Visa Portal</p>
+                  <p className="font-bold text-sm">GH-eVISA</p>
+                  <p className="text-gray-500 text-[10px] uppercase tracking-widest">Republic of Ghana</p>
                 </div>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">
                 The official electronic visa application portal of the Ghana Immigration Service.
               </p>
             </div>
+
+            {/* Visa Information */}
             <div>
-              <h4 className="font-bold text-sm mb-4 text-gray-300 uppercase tracking-wider">Quick Links</h4>
+              <h4 className="font-bold text-sm mb-4 text-gray-300 uppercase tracking-wider">Visa Information</h4>
               <ul className="space-y-2.5">
-                {["Apply for Visa|/register", "Visa Requirements|/visa-requirements", "Track Application|/track", "Help|/help"].map((item, index) => {
-                  const [label, href] = item.split("|");
-                  return (
-                    <li key={`quick-${index}`}>
-                      <Link href={href} className="text-gray-400 hover:text-white text-sm transition-colors">{label}</Link>
-                    </li>
-                  );
-                })}
+                {[
+                  { label: "Visa Types", href: "/#visa-types" },
+                  { label: "Visa Requirements", href: "/visa-requirements" },
+                ].map((item) => (
+                  <li key={item.href}>
+                    <Link href={item.href} className="text-gray-400 hover:text-white text-sm transition-colors">
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
+
+            {/* Support */}
             <div>
-              <h4 className="font-bold text-sm mb-4 text-gray-300 uppercase tracking-wider">Legal</h4>
+              <h4 className="font-bold text-sm mb-4 text-gray-300 uppercase tracking-wider">Support</h4>
               <ul className="space-y-2.5">
-                {["Privacy Policy|/privacy-policy", "Terms of Service|/terms"].map((item, index) => {
-                  const [label, href] = item.split("|");
-                  return (
-                    <li key={`legal-${index}`}>
-                      <Link href={href} className="text-gray-400 hover:text-white text-sm transition-colors">{label}</Link>
-                    </li>
-                  );
-                })}
+                <li>
+                  <Link href="/help" className="text-gray-400 hover:text-white text-sm transition-colors">
+                    Contact Support
+                  </Link>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone size={13} className="text-gray-500" />
+                  <span className="text-gray-400 text-sm">+233 (0) 302 258 250</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail size={13} className="text-gray-500" />
+                  <span className="text-gray-400 text-sm">evisa@gis.gov.gh</span>
+                </li>
               </ul>
             </div>
+
+            {/* Government Links */}
             <div>
-              <h4 className="font-bold text-sm mb-4 text-gray-300 uppercase tracking-wider">Contact</h4>
-              <ul className="space-y-3">
-                <li className="text-gray-400 text-sm">+233 (0) 302 258 250</li>
-                <li className="text-gray-400 text-sm">evisa@gis.gov.gh</li>
-                <li className="text-gray-400 text-sm">Ghana Immigration Service<br />Independence Ave, Accra</li>
+              <h4 className="font-bold text-sm mb-4 text-gray-300 uppercase tracking-wider">Government Links</h4>
+              <ul className="space-y-2.5">
+                <li className="flex items-center gap-2">
+                  <ExternalLink size={12} className="text-gray-500" />
+                  <a href="https://gis.gov.gh" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-sm transition-colors">
+                    Ghana Immigration Service
+                  </a>
+                </li>
+                <li className="flex items-center gap-2">
+                  <ExternalLink size={12} className="text-gray-500" />
+                  <a href="https://mfa.gov.gh" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-sm transition-colors">
+                    Embassy Contacts
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
+
           <div className="pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-gray-500 text-xs">© {new Date().getFullYear()} Ghana Immigration Service. All rights reserved.</p>
-            <p className="text-gray-600 text-xs">Powered by the Ministry of the Interior, Republic of Ghana</p>
+            <p className="text-gray-500 text-xs">
+              © {new Date().getFullYear()} Ghana Immigration Service. All rights reserved.
+            </p>
+            <p className="text-gray-600 text-xs">
+              Powered by the Ministry of the Interior, Republic of Ghana
+            </p>
           </div>
         </div>
       </footer>
