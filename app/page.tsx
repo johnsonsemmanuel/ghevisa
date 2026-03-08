@@ -64,7 +64,6 @@ export default function Home() {
 
   const howItWorks = useInView();
   const visaTypes = useInView();
-  const whyGhana = useInView();
   const stats = useInView();
   const faq = useInView();
 
@@ -396,68 +395,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════ WHY GHANA ═══════════════════ */}
-      <section className="py-24 lg:py-32 bg-white" ref={whyGhana.ref}>
-        <div className="max-w-7xl mx-auto px-5 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className={whyGhana.inView ? "animate-slide-in-left" : "opacity-0"}>
-              <div className="inline-flex items-center gap-2 bg-[#CE1126]/5 border border-[#CE1126]/10 rounded-full px-4 py-1.5 mb-4">
-                <MapPin size={14} className="text-[#CE1126]" />
-                <span className="text-[#CE1126] text-xs font-semibold uppercase tracking-wider">Discover Ghana</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6">
-                Why Visit <span className="text-[#006B3F]">Ghana</span>?
-              </h2>
-              <p className="text-gray-500 leading-relaxed mb-8">
-                Ghana — the Gateway to West Africa — is one of the most welcoming and vibrant countries on the continent. 
-                From pristine coastlines to lush rainforests, historic castles to bustling city nightlife, Ghana offers an 
-                unforgettable experience for every traveler.
-              </p>
-
-              <div className="space-y-4">
-                {[
-                  { icon: <Star size={18} />, title: "Rich Cultural Heritage", desc: "Experience centuries-old traditions, vibrant festivals, and the warmth of Ghanaian hospitality." },
-                  { icon: <Globe size={18} />, title: "Year of Return & Beyond", desc: "Trace roots and heritage through historic sites, forts, and the Door of No Return at Cape Coast." },
-                  { icon: <Shield size={18} />, title: "Safe & Stable", desc: "One of Africa's most peaceful and democratic nations with a strong rule of law." },
-                  { icon: <Plane size={18} />, title: "Easy Connectivity", desc: "Kotoka International Airport connects Ghana to major cities worldwide." },
-                ].map((feat) => (
-                  <div key={feat.title} className="flex items-start gap-4 group">
-                    <div className="w-10 h-10 bg-[#006B3F]/8 rounded-xl flex items-center justify-center shrink-0 text-[#006B3F] group-hover:bg-[#006B3F] group-hover:text-white transition-all">
-                      {feat.icon}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-sm">{feat.title}</h4>
-                      <p className="text-sm text-gray-500">{feat.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={`relative ${whyGhana.inView ? "animate-slide-in-right2" : "opacity-0"}`}>
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/5]">
-                <iframe
-                  className="w-full h-full object-cover"
-                  src="https://www.youtube.com/embed/Mj6W3w1Eeys?autoplay=1&mute=1&loop=1&playlist=Mj6W3w1Eeys&controls=0&showinfo=0&modestbranding=1&iv_load_policy=3&rel=0"
-                  title="Ghana Tourism Video"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-8">
-                  <p className="text-white font-bold text-lg mb-1">Akwaaba!</p>
-                  <p className="text-white/70 text-sm">Welcome to Ghana — the land of gold and hospitality</p>
-                </div>
-              </div>
-              {/* Decorative elements */}
-              <div className="absolute -top-4 -right-4 w-24 h-24 bg-[#C8962E]/10 rounded-2xl -z-10" />
-              <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-[#006B3F]/8 rounded-2xl -z-10" />
-            </div>
-          </div>
-        </div>
-      </section>
-
+      
       {/* ═══════════════════ STATS ═══════════════════ */}
       <section className="py-20 bg-gradient-to-r from-[#006B3F] via-[#007A47] to-[#006B3F] relative overflow-hidden" ref={stats.ref}>
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE4YzAtOS45NDEtOC4wNTktMTgtMTgtMThTMCA4LjA1OSAwIDE4czguMDU5IDE4IDE4IDE4IDE4LTguMDU5IDE4LTE4Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
