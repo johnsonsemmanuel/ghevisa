@@ -160,7 +160,7 @@ export default function StaffLoginPage() {
 
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex gap-2 justify-end mb-2">
+            <div className="flex flex-wrap gap-2 justify-end mb-2">
               <Button
                 type="button"
                 variant="secondary"
@@ -171,7 +171,31 @@ export default function StaffLoginPage() {
                 }}
                 className="text-xs"
               >
-                Demo: GIS
+                Demo: GIS Reviewer
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setEmail("gis.approver@gis.gov.gh");
+                  setPassword("password");
+                }}
+                className="text-xs"
+              >
+                Demo: GIS Approver
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setEmail("gis.admin@gis.gov.gh");
+                  setPassword("password");
+                }}
+                className="text-xs"
+              >
+                Demo: GIS Admin
               </Button>
               <Button
                 type="button"
