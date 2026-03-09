@@ -461,7 +461,7 @@ function NewApplicationPageInner() {
       const payload: Record<string, unknown> = { step: nextStepNum };
       payload.intended_arrival = form.intended_arrival;
       payload.duration_days = parseInt(form.duration_days || form.visa_duration) || null;
-      payload.address_in_ghana = form.residential_address || form.address_in_ghana || "";
+      payload.address_in_ghana = form.address_in_ghana || "";
       payload.purpose_of_visit = form.purpose_of_visit || "";
       payload.port_of_entry = form.port_of_entry;
       payload.passport_expiry = form.passport_expiry;
@@ -504,17 +504,12 @@ function NewApplicationPageInner() {
     setTimeout(() => router.push("/dashboard/applicant"), 1200);
   }, [form, currentStep, application, router]);
 
-  const handlePay = async (methodWithCurrency: string) => {
+  const handlePay = async (method: string) => {
     if (!application) return;
     try {
-      // Parse method and currency (format: "method|currency")
-      const [method, currency] = methodWithCurrency.includes('|') 
-        ? methodWithCurrency.split('|') 
-        : [methodWithCurrency, 'USD'];
-      
       const res = await api.post(`/applicant/applications/${application.id}/payment/initialize`, {
         payment_method: method,
-        currency: currency
+        currency: 'GHS'
       });
 
       if (res.data.success) {
@@ -590,6 +585,9 @@ function NewApplicationPageInner() {
     } else if (step === 2) {
       if (!form.intended_arrival) e.intended_arrival = "Required";
       if (!form.duration_days) e.duration_days = "Required";
+      if (!form.port_of_entry) e.port_of_entry = "Required";
+      if (!form.address_in_ghana?.trim()) e.address_in_ghana = "Required";
+      if (!form.purpose_of_visit?.trim()) e.purpose_of_visit = "Required";
     }
     if (step === 3) {
       const miss = reqDocs.filter((d) => d.required && !documents[d.key]);
@@ -951,6 +949,9 @@ function NewApplicationPageInner() {
                     {PORTS_OF_ENTRY.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </Select>
                   <Input label="Duration of Stay (Days) *" type="number" value={form.duration_days} onChange={(e) => set("duration_days", e.target.value)} error={errors.duration_days} placeholder="e.g. 14" min={1} max={maxDur} required />
+                  <div className="sm:col-span-2">
+                    <Textarea label="Address in Ghana *" value={form.address_in_ghana || ""} onChange={(e) => set("address_in_ghana", e.target.value)} error={errors.address_in_ghana} placeholder="Enter your address while in Ghana" rows={2} required />
+                  </div>
                   <div className="sm:col-span-2">
                     <Textarea label="Purpose of Visit *" value={form.purpose_of_visit || ""} onChange={(e) => set("purpose_of_visit", e.target.value)} error={errors.purpose_of_visit} placeholder="Describe your reason for visiting Ghana" rows={3} required />
                   </div>

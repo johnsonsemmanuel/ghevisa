@@ -12,10 +12,13 @@ function PaymentCallbackContent() {
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [message, setMessage] = useState("");
   const [referenceNumber, setReferenceNumber] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Support both legacy references and GCB merchantRef
   const reference = searchParams.get("reference") || searchParams.get("trxref");
   const merchantRef = searchParams.get("merchantRef") || searchParams.get("merchant_ref");
+  const statusCode = searchParams.get("statusCode") || searchParams.get("status_code");
 
   useEffect(() => {
     // Handle GCB Payment Gateway redirect
@@ -24,7 +27,7 @@ function PaymentCallbackContent() {
       return;
     }
 
-    // Handle legacy payment providers
+    // Handle legacy payment providers (Paystack, Stripe)
     if (!reference) {
       setStatus("failed");
       setMessage("No payment reference provided");
@@ -32,12 +35,16 @@ function PaymentCallbackContent() {
     }
 
     verifyLegacyPayment();
-  }, [reference, merchantRef]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const verifyGcbPayment = async () => {
+    if (isVerifying) return;
+    setIsVerifying(true);
+
     try {
       const res = await api.get("/gcb/verify", {
-        params: { merchantRef: merchantRef }
+        params: { merchantRef, statusCode }
       });
 
       if (res.data.success && res.data.status === "completed") {
@@ -45,32 +52,49 @@ function PaymentCallbackContent() {
         setMessage(res.data.message || "Payment completed successfully! Your application has been submitted.");
         setReferenceNumber(res.data.reference_number);
         
-        // Redirect to application page if we have application_id
         if (res.data.application_id) {
           setTimeout(() => {
             router.push(`/dashboard/applicant/applications/${res.data.application_id}`);
           }, 3000);
         }
-      } else if (res.data.status === "pending") {
+      } else if (res.data.status === "pending" && retryCount < 10) {
         setStatus("loading");
-        setMessage("Payment is being processed. Please wait...");
-        // Retry after 3 seconds
-        setTimeout(verifyGcbPayment, 3000);
+        setMessage(`Payment is being processed. Please wait... (${retryCount + 1}/10)`);
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          setIsVerifying(false);
+          verifyGcbPayment();
+        }, 5000);
+        return; // Don't reset isVerifying yet
       } else {
         setStatus("failed");
         setMessage(res.data.message || "Payment verification failed. Please contact support.");
       }
-    } catch (err) {
-      setStatus("failed");
-      setMessage("Unable to verify payment. Please check your dashboard for status updates or contact support.");
+    } catch (err: any) {
+      if (err.response?.status === 429 && retryCount < 10) {
+        setStatus("loading");
+        setMessage("Retrying verification...");
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          setIsVerifying(false);
+          verifyGcbPayment();
+        }, 10000);
+        return;
+      } else {
+        setStatus("failed");
+        setMessage(err.response?.data?.message || "Unable to verify payment. Please check your dashboard for status updates.");
+      }
     }
+    setIsVerifying(false);
   };
 
   const verifyLegacyPayment = async () => {
     try {
+      console.log("Verifying payment with reference:", reference);
       const res = await api.post("/payment/verify", {
         reference: reference,
       });
+      console.log("Payment verification response:", res.data);
 
       if (res.data.success && res.data.status === "completed") {
         setStatus("success");
@@ -82,9 +106,17 @@ function PaymentCallbackContent() {
         setStatus("failed");
         setMessage(res.data.message || "Payment verification failed. Please contact support.");
       }
-    } catch (err) {
-      setStatus("failed");
-      setMessage("Unable to verify payment. Please check your dashboard for status updates or contact support.");
+    } catch (err: any) {
+      console.error("Payment verification error:", err.response?.status, err.response?.data || err.message);
+      
+      // Handle 401 Unauthorized - user session may have expired
+      if (err.response?.status === 401) {
+        setStatus("failed");
+        setMessage("Session expired. Please login again and check your dashboard for payment status.");
+      } else {
+        setStatus("failed");
+        setMessage(err.response?.data?.message || "Unable to verify payment. Please check your dashboard for status updates or contact support.");
+      }
     }
   };
 

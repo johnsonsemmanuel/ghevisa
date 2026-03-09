@@ -19,6 +19,7 @@ export default function AdminLoginPage() {
   const [mfaStep, setMfaStep] = useState(false);
   const [mfaEmail, setMfaEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   const handleMfaVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +69,12 @@ export default function AdminLoginPage() {
       if (error.message === "MFA_REQUIRED" && error.mfaEmail) {
         setMfaEmail(error.mfaEmail);
         setMfaStep(true);
-        toast.success("MFA code sent to your email.", { duration: 5000 });
+        // Store dev OTP if provided (development only)
+        const devOtpValue = (error as any).devOtp;
+        if (devOtpValue) {
+          setDevOtp(devOtpValue);
+        }
+        toast.success("MFA code sent to your email. Please check your inbox.", { duration: 5000 });
         setLoading(false);
         return;
       }
@@ -173,6 +179,25 @@ export default function AdminLoginPage() {
               <p className="text-text-secondary mb-2">A 6-digit verification code has been sent to</p>
               <p className="text-sm font-medium text-purple-700 bg-purple-50 rounded-lg px-3 py-2 mb-6">{mfaEmail}</p>
 
+              {devOtp && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-xs font-semibold text-blue-700 mb-1">🔧 Development Mode - Your OTP:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-2xl font-mono font-bold text-blue-900 tracking-widest">{devOtp}</code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(devOtp);
+                        toast.success("OTP copied to clipboard!");
+                      }}
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleMfaVerify} className="space-y-5">
                 <Input
                   label="Verification Code"
@@ -183,7 +208,9 @@ export default function AdminLoginPage() {
                   required
                   autoFocus
                 />
-                <p className="text-xs text-text-muted">Enter the 6-digit code from your email. The code expires in 10 minutes.</p>
+                <p className="text-xs text-text-muted">
+                  Enter the 6-digit code from your email. The code expires in 10 minutes.
+                </p>
                 <Button type="submit" loading={loading} disabled={otp.length !== 6} className="w-full !bg-purple-600 hover:!bg-purple-700" size="lg">
                   Verify &amp; Sign In
                 </Button>

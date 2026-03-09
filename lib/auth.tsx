@@ -62,8 +62,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // If MFA is required, throw a structured error the UI can handle
     if (res.data.requires_mfa) {
-      const err = new Error("MFA_REQUIRED") as Error & { mfaEmail: string };
+      const err = new Error("MFA_REQUIRED") as Error & { mfaEmail: string; devOtp?: string };
       err.mfaEmail = res.data.email;
+      if (res.data.dev_otp) {
+        err.devOtp = res.data.dev_otp;
+      }
       throw err;
     }
 

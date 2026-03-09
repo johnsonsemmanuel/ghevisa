@@ -36,6 +36,7 @@ export default function StaffLoginPage() {
   const [mfaStep, setMfaStep] = useState(false);
   const [mfaEmail, setMfaEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   const handleMfaVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +85,11 @@ export default function StaffLoginPage() {
       if (error.message === "MFA_REQUIRED" && error.mfaEmail) {
         setMfaEmail(error.mfaEmail);
         setMfaStep(true);
+        // Store dev OTP if provided (development only)
+        const devOtpValue = (error as any).devOtp;
+        if (devOtpValue) {
+          setDevOtp(devOtpValue);
+        }
         toast.success("MFA code sent to your email. Please check your inbox.", { duration: 5000 });
         setLoading(false);
         return;
@@ -195,6 +201,25 @@ export default function StaffLoginPage() {
               <p className="text-sm font-medium text-teal-700 bg-teal-50 rounded-lg px-3 py-2 mb-6">
                 {mfaEmail}
               </p>
+
+              {devOtp && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-xs font-semibold text-blue-700 mb-1">🔧 Development Mode - Your OTP:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-2xl font-mono font-bold text-blue-900 tracking-widest">{devOtp}</code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(devOtp);
+                        toast.success("OTP copied to clipboard!");
+                      }}
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleMfaVerify} className="space-y-5">
                 <Input
