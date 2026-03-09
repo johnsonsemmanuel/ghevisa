@@ -51,8 +51,21 @@ export function PaymentModal({
   referenceNumber,
 }: PaymentModalProps) {
   const [selectedMethod, setSelectedMethod] = useState("paystack_card");
+  const [selectedCurrency, setSelectedCurrency] = useState<"USD" | "GHS">("USD");
   const [processing, setProcessing] = useState(false);
   const [agreed, setAgreed] = useState(false);
+
+  // Exchange rate: 1 USD = 12.5 GHS
+  const exchangeRate = 12.5;
+
+  // Calculate amount based on selected currency
+  const getDisplayAmount = () => {
+    return selectedCurrency === "GHS" ? totalFee * exchangeRate : totalFee;
+  };
+
+  const getCurrencySymbol = () => {
+    return selectedCurrency === "USD" ? "$" : "GH₵";
+  };
 
   if (!open) return null;
 
@@ -60,7 +73,8 @@ export function PaymentModal({
     if (!agreed) return;
     setProcessing(true);
     try {
-      await onPay(selectedMethod);
+      // Pass both method and currency to parent
+      await onPay(selectedMethod + "|" + selectedCurrency);
     } finally {
       setProcessing(false);
     }
@@ -100,21 +114,65 @@ export function PaymentModal({
             </div>
           </div>
 
+          {/* Currency Selection */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-text-primary">Select Currency</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedCurrency("USD")}
+                disabled={processing}
+                className={`p-3 rounded-xl border-2 transition-all ${
+                  selectedCurrency === "USD"
+                    ? "border-accent bg-accent/5"
+                    : "border-border hover:border-accent/30"
+                } ${processing ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <div className="text-center">
+                  <p className="font-semibold text-text-primary">USD ($)</p>
+                  <p className="text-xs text-text-muted mt-1">US Dollar</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCurrency("GHS")}
+                disabled={processing}
+                className={`p-3 rounded-xl border-2 transition-all ${
+                  selectedCurrency === "GHS"
+                    ? "border-accent bg-accent/5"
+                    : "border-border hover:border-accent/30"
+                } ${processing ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <div className="text-center">
+                  <p className="font-semibold text-text-primary">GHS (₵)</p>
+                  <p className="text-xs text-text-muted mt-1">Ghana Cedi</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
           {/* Fee Breakdown */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-text-primary">Fee Breakdown</h3>
             {breakdown.map((item, i) => (
               <div key={i} className="flex items-center justify-between py-1">
                 <span className="text-sm text-text-secondary">{item.label}</span>
-                <span className="text-sm text-text-primary">${item.amount.toFixed(2)}</span>
+                <span className="text-sm text-text-primary">
+                  {getCurrencySymbol()}{(item.amount * (selectedCurrency === "GHS" ? exchangeRate : 1)).toFixed(2)}
+                </span>
               </div>
             ))}
             <div className="border-t border-border pt-2 mt-2 flex items-center justify-between">
               <span className="font-semibold text-text-primary">Total</span>
               <span className="text-xl font-bold text-accent">
-                ${totalFee.toFixed(2)}
+                {getCurrencySymbol()}{getDisplayAmount().toFixed(2)}
               </span>
             </div>
+            {selectedCurrency === "GHS" && (
+              <p className="text-xs text-text-muted mt-2">
+                Exchange rate: $1 = GH₵{exchangeRate.toFixed(2)}
+              </p>
+            )}
           </div>
 
           {/* Payment Method Selection */}
@@ -211,7 +269,7 @@ export function PaymentModal({
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                <CreditCard size={16} /> Pay ${totalFee.toFixed(2)}
+                <CreditCard size={16} /> Pay {getCurrencySymbol()}{getDisplayAmount().toFixed(2)}
               </span>
             )}
           </Button>

@@ -504,12 +504,17 @@ function NewApplicationPageInner() {
     setTimeout(() => router.push("/dashboard/applicant"), 1200);
   }, [form, currentStep, application, router]);
 
-  const handlePay = async (method: string) => {
+  const handlePay = async (methodWithCurrency: string) => {
     if (!application) return;
     try {
+      // Parse method and currency (format: "method|currency")
+      const [method, currency] = methodWithCurrency.includes('|') 
+        ? methodWithCurrency.split('|') 
+        : [methodWithCurrency, 'USD'];
+      
       const res = await api.post(`/applicant/applications/${application.id}/payment/initialize`, {
         payment_method: method,
-        currency: "USD"
+        currency: currency
       });
 
       if (res.data.success) {
