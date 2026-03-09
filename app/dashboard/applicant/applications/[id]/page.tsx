@@ -216,7 +216,7 @@ export default function ApplicationDetailPage() {
               </p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <Button size="sm" leftIcon={<CreditCard size={14} />} onClick={() => router.push(`/dashboard/applicant/applications/new?resume=${id}`)}>
+              <Button size="sm" leftIcon={<CreditCard size={14} />} onClick={() => router.push(`/dashboard/applicant/applications/${id}/payment`)}>
                 Complete Payment
               </Button>
             </div>

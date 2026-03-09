@@ -112,6 +112,8 @@ export interface Application {
   reference_number: string;
   user_id: number;
   visa_type_id: number;
+  service_tier_id?: number | null;
+  entry_type?: "single" | "multiple" | null;
   // Decrypted PII fields (returned by API)
   first_name: string;
   last_name: string;
@@ -175,6 +177,7 @@ export interface Application {
   created_at: string;
   updated_at: string;
   visa_type?: VisaType;
+  service_tier?: ServiceTier;
   documents?: ApplicationDocument[];
   payment?: Payment;
   status_history?: StatusHistoryEntry[];
