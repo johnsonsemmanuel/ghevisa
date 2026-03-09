@@ -32,10 +32,11 @@ const PAYMENT_METHODS = [
     badge: "Popular",
   },
   {
-    id: "bank_transfer",
-    label: "Bank Transfer (GCB)",
-    description: "Direct transfer to Ghana Commercial Bank",
-    icon: <Shield size={22} className="text-text-muted" />,
+    id: "gcb_payment",
+    label: "GCB Payment Gateway",
+    description: "Secure payment via Ghana Commercial Bank",
+    icon: <Shield size={22} className="text-accent" />,
+    badge: "Secure",
   },
 ];
 

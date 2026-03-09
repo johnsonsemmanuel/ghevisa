@@ -82,9 +82,11 @@ export default function ApplicationPaymentPage() {
         setShowPaymentModal(false);
 
         if (res.data.authorization_url) {
-          // Redirect to payment gateway
+          // Redirect to payment gateway (Paystack, GCB, etc.)
+          toast.success("Redirecting to payment gateway...", { duration: 2000 });
           window.location.href = res.data.authorization_url;
         } else if (res.data.provider === 'bank_transfer') {
+          // For manual bank transfer, show instructions
           toast.success("Bank transfer initiated. Please follow the instructions.", { duration: 5000, icon: "🏦" });
           setTimeout(() => {
             router.push(`/dashboard/applicant/applications/${id}`);

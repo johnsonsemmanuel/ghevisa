@@ -522,10 +522,11 @@ function NewApplicationPageInner() {
         setShowPaymentModal(false);
 
         if (res.data.authorization_url) {
-          // Redirect the user to Paystack's checkout page
+          // Redirect to payment gateway (Paystack, GCB, etc.)
+          toast.success("Redirecting to payment gateway...", { duration: 2000 });
           window.location.href = res.data.authorization_url;
         } else if (res.data.provider === 'bank_transfer') {
-          // For bank transfer, show a success message then a completion prompt
+          // For manual bank transfer, show instructions
           toast.success("Bank transfer initiated. Please follow the instructions to complete your payment.", { duration: 5000, icon: "🏦" });
           setTimeout(() => {
             setShowCompletionPopup(true);

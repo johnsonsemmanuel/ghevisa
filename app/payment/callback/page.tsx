@@ -44,6 +44,13 @@ function PaymentCallbackContent() {
         setStatus("success");
         setMessage(res.data.message || "Payment completed successfully! Your application has been submitted.");
         setReferenceNumber(res.data.reference_number);
+        
+        // Redirect to application page if we have application_id
+        if (res.data.application_id) {
+          setTimeout(() => {
+            router.push(`/dashboard/applicant/applications/${res.data.application_id}`);
+          }, 3000);
+        }
       } else if (res.data.status === "pending") {
         setStatus("loading");
         setMessage("Payment is being processed. Please wait...");
