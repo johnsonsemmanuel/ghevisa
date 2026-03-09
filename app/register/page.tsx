@@ -95,8 +95,9 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(form);
-      toast.success("Registration successful");
-      router.push("/dashboard/applicant");
+      // Registration now requires email verification
+      toast.success("Registration successful! Please check your email to verify your account.");
+      router.push("/verify-email");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
       if (error.response?.data?.errors) {

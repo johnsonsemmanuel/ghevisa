@@ -68,11 +68,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (data: RegisterData) => {
     await fetchCsrfCookie();
     const res = await api.post("/auth/register", data);
-    const { user: u, token: t } = res.data;
-    setUser(u);
-    setToken(t);
-    localStorage.setItem("token", t);
-    localStorage.setItem("user", JSON.stringify(u));
+    // Don't auto-login since email verification is required
+    // The response will include user data but no token
+    return res.data;
   }, []);
 
   const logout = useCallback(async () => {

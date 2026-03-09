@@ -9,7 +9,7 @@ interface PaymentModalProps {
   onClose: () => void;
   onPay: (method: string) => Promise<void>;
   totalFee: number;
-  currency?: string;
+  currency?: "USD" | "GHS";
   breakdown: { label: string; amount: number }[];
   visaTypeName: string;
   applicantName: string;
@@ -51,7 +51,7 @@ export function PaymentModal({
   referenceNumber,
 }: PaymentModalProps) {
   const [selectedMethod, setSelectedMethod] = useState("paystack_card");
-  const [selectedCurrency, setSelectedCurrency] = useState<"USD" | "GHS">("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState<"USD" | "GHS">(currency);
   const [processing, setProcessing] = useState(false);
   const [agreed, setAgreed] = useState(false);
 

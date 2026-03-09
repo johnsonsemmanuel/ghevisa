@@ -44,8 +44,15 @@ export default function LoginPage() {
       toast.success("Authentication successful");
       router.push("/dashboard/applicant");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
-      if (error.response?.data?.errors) {
+      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]>; requires_email_verification?: boolean; email?: string } } };
+      if (error.response?.data?.requires_email_verification) {
+        // Handle email verification requirement
+        toast.error(error.response.data.message || "Email verification required");
+        // Optionally redirect to verification page or show verification message
+        if (error.response.data.email) {
+          console.log(`Verification email sent to: ${error.response.data.email}`);
+        }
+      } else if (error.response?.data?.errors) {
         const fieldErrors: Record<string, string> = {};
         for (const [key, msgs] of Object.entries(error.response.data.errors)) {
           fieldErrors[key] = msgs[0];

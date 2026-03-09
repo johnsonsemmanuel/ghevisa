@@ -21,6 +21,19 @@ export default function ApplicationPaymentPage() {
   const id = params.id as string;
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<"USD" | "GHS">("USD");
+
+  // Exchange rate: 1 USD = 12.5 GHS
+  const exchangeRate = 12.5;
+
+  // Calculate amount based on selected currency
+  const getDisplayAmount = () => {
+    return selectedCurrency === "GHS" ? fees.total * exchangeRate : fees.total;
+  };
+
+  const getCurrencySymbol = () => {
+    return selectedCurrency === "USD" ? "$" : "GH₵";
+  };
 
   const { data: appData, isLoading: appLoading } = useQuery({
     queryKey: ["application", id],
@@ -204,6 +217,57 @@ export default function ApplicationPaymentPage() {
           </div>
         </div>
 
+        {/* Currency Selection */}
+        <div className="card mb-6">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-primary/6 flex items-center justify-center">
+              <CreditCard size={16} className="text-primary" />
+            </div>
+            <h2 className="text-base font-bold text-text-primary">Select Currency</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedCurrency("USD")}
+              disabled={processing}
+              className={`p-4 rounded-xl border-2 transition-all ${
+                selectedCurrency === "USD"
+                  ? "border-accent bg-accent/5"
+                  : "border-border hover:border-accent/30"
+              } ${processing ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <div className="text-center">
+                <p className="font-semibold text-text-primary">USD ($)</p>
+                <p className="text-xs text-text-muted mt-1">US Dollar</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCurrency("GHS")}
+              disabled={processing}
+              className={`p-4 rounded-xl border-2 transition-all ${
+                selectedCurrency === "GHS"
+                  ? "border-accent bg-accent/5"
+                  : "border-border hover:border-accent/30"
+              } ${processing ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <div className="text-center">
+                <p className="font-semibold text-text-primary">GHS (₵)</p>
+                <p className="text-xs text-text-muted mt-1">Ghana Cedi</p>
+              </div>
+            </button>
+          </div>
+
+          {selectedCurrency === "GHS" && (
+            <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20">
+              <p className="text-xs text-info">
+                <strong>Exchange Rate:</strong> $1 = GH₵{exchangeRate.toFixed(2)}
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Payment Details */}
         <div className="card mb-6">
           <div className="flex items-center gap-2.5 mb-5">
@@ -216,17 +280,23 @@ export default function ApplicationPaymentPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2">
               <span className="text-sm text-text-secondary">Base Fee ({application.entry_type === "multiple" ? "Multiple" : "Single"} Entry)</span>
-              <span className="text-sm font-medium text-text-primary">${fees.base.toFixed(2)}</span>
+              <span className="text-sm font-medium text-text-primary">
+                {getCurrencySymbol()}{(fees.base * (selectedCurrency === "GHS" ? exchangeRate : 1)).toFixed(2)}
+              </span>
             </div>
             {fees.processing > 0 && (
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-text-secondary">Processing Fee ({application.service_tier?.name})</span>
-                <span className="text-sm font-medium text-text-primary">${fees.processing.toFixed(2)}</span>
+                <span className="text-sm font-medium text-text-primary">
+                  {getCurrencySymbol()}{(fees.processing * (selectedCurrency === "GHS" ? exchangeRate : 1)).toFixed(2)}
+                </span>
               </div>
             )}
             <div className="border-t border-border pt-3 flex items-center justify-between">
               <span className="font-semibold text-text-primary">Total Amount</span>
-              <span className="text-2xl font-bold text-accent">${fees.total.toFixed(2)}</span>
+              <span className="text-2xl font-bold text-accent">
+                {getCurrencySymbol()}{getDisplayAmount().toFixed(2)}
+              </span>
             </div>
           </div>
         </div>
@@ -251,7 +321,7 @@ export default function ApplicationPaymentPage() {
             disabled={processing}
             className="!bg-accent hover:!bg-accent-dark min-w-[280px]"
           >
-            Proceed to Payment
+            Proceed to Payment ({getCurrencySymbol()}{getDisplayAmount().toFixed(2)})
           </Button>
         </div>
       </div>
@@ -262,6 +332,7 @@ export default function ApplicationPaymentPage() {
         onClose={() => setShowPaymentModal(false)}
         onPay={handlePay}
         totalFee={fees.total}
+        currency={selectedCurrency}
         breakdown={[
           { label: `Base Fee (${application.entry_type === "multiple" ? "Multiple" : "Single"} Entry)`, amount: fees.base },
           ...(fees.processing > 0 ? [{ label: "Processing Fee", amount: fees.processing }] : []),
