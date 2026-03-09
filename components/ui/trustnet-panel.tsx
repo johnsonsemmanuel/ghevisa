@@ -31,7 +31,7 @@ export function TrustNetPanel({ data, compact = false }: TrustNetPanelProps) {
     last_checked: new Date().toISOString(),
   };
 
-  const allClear = trustnet.passport_authentic && trustnet.mrz_valid && 
+  const allClear = trustnet.passport_authentic && trustnet.mrz_valid &&
     trustnet.interpol_clear && trustnet.watchlist_clear && trustnet.identity_verified;
 
   const checks = [
@@ -44,14 +44,14 @@ export function TrustNetPanel({ data, compact = false }: TrustNetPanelProps) {
 
   if (compact) {
     return (
-      <div className={`p-4 rounded-xl border-2 ${allClear ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
+      <div className={`p-4 rounded-xl border-2 ${allClear ? "bg-success/5 border-success/20" : "bg-danger/5 border-danger/20"}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${allClear ? "bg-emerald-100" : "bg-red-100"}`}>
-              {allClear ? <Shield size={20} className="text-emerald-600" /> : <AlertOctagon size={20} className="text-red-600" />}
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${allClear ? "bg-success/10" : "bg-danger/10"}`}>
+              {allClear ? <Shield size={20} className="text-success" /> : <AlertOctagon size={20} className="text-danger" />}
             </div>
             <div>
-              <p className={`font-bold ${allClear ? "text-emerald-700" : "text-red-700"}`}>
+              <p className={`font-bold ${allClear ? "text-success" : "text-danger"}`}>
                 TrustNET: {allClear ? "CLEAR" : "FLAGGED"}
               </p>
               <p className="text-xs text-slate-500">Risk Score: {trustnet.risk_score}/100</p>
@@ -59,8 +59,8 @@ export function TrustNetPanel({ data, compact = false }: TrustNetPanelProps) {
           </div>
           <div className="flex gap-1">
             {checks.map((c, i) => (
-              <div key={i} className={`w-6 h-6 rounded flex items-center justify-center ${c.passed ? "bg-emerald-100" : "bg-red-100"}`}>
-                {c.passed ? <CheckCircle2 size={12} className="text-emerald-600" /> : <XCircle size={12} className="text-red-600" />}
+              <div key={i} className={`w-6 h-6 rounded flex items-center justify-center ${c.passed ? "bg-success/10" : "bg-danger/10"}`}>
+                {c.passed ? <CheckCircle2 size={12} className="text-success" /> : <XCircle size={12} className="text-danger" />}
               </div>
             ))}
           </div>
@@ -73,15 +73,15 @@ export function TrustNetPanel({ data, compact = false }: TrustNetPanelProps) {
     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${allClear ? "bg-gradient-to-br from-emerald-100 to-emerald-50" : "bg-gradient-to-br from-red-100 to-red-50"}`}>
-            <Shield size={24} className={allClear ? "text-emerald-600" : "text-red-600"} />
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${allClear ? "bg-gradient-to-br from-success/20 to-success/5" : "bg-gradient-to-br from-danger/20 to-danger/5"}`}>
+            <Shield size={24} className={allClear ? "text-success" : "text-danger"} />
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-800">TrustNET Verification</h3>
             <p className="text-xs text-slate-500">Passport & Security Screening</p>
           </div>
         </div>
-        <div className={`px-4 py-2 rounded-full font-bold text-sm ${allClear ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+        <div className={`px-4 py-2 rounded-full font-bold text-sm ${allClear ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}>
           {allClear ? "✓ CLEAR" : "⚠ FLAGGED"}
         </div>
       </div>
@@ -90,13 +90,13 @@ export function TrustNetPanel({ data, compact = false }: TrustNetPanelProps) {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-slate-600">Risk Score</span>
-          <span className={`text-lg font-bold ${trustnet.risk_score < 30 ? "text-emerald-600" : trustnet.risk_score < 60 ? "text-amber-600" : "text-red-600"}`}>
+          <span className={`text-lg font-bold ${trustnet.risk_score < 30 ? "text-success" : trustnet.risk_score < 60 ? "text-warning" : "text-danger"}`}>
             {trustnet.risk_score}/100
           </span>
         </div>
         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-          <div 
-            className={`h-full rounded-full transition-all duration-150 ease-out ${trustnet.risk_score < 30 ? "bg-gradient-to-r from-emerald-400 to-emerald-500" : trustnet.risk_score < 60 ? "bg-gradient-to-r from-amber-400 to-amber-500" : "bg-gradient-to-r from-red-400 to-red-500"}`}
+          <div
+            className={`h-full rounded-full transition-all duration-150 ease-out ${trustnet.risk_score < 30 ? "bg-success" : trustnet.risk_score < 60 ? "bg-warning" : "bg-danger"}`}
             style={{ width: `${trustnet.risk_score}%` }}
           />
         </div>
@@ -107,19 +107,19 @@ export function TrustNetPanel({ data, compact = false }: TrustNetPanelProps) {
         {checks.map((check, i) => {
           const Icon = check.icon;
           return (
-            <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${check.passed ? "bg-emerald-50 border border-emerald-100" : "bg-red-50 border border-red-100"}`}>
+            <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${check.passed ? "bg-success/5 border border-success/10" : "bg-danger/5 border border-danger/10"}`}>
               <div className="flex items-center gap-4">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${check.passed ? "bg-emerald-100" : "bg-red-100"}`}>
-                  <Icon size={16} className={check.passed ? "text-emerald-600" : "text-red-600"} />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${check.passed ? "bg-success/10" : "bg-danger/10"}`}>
+                  <Icon size={16} className={check.passed ? "text-success" : "text-danger"} />
                 </div>
                 <span className="text-sm font-medium text-slate-700">{check.label}</span>
               </div>
               {check.passed ? (
-                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                <span className="flex items-center gap-1 text-xs font-semibold text-success">
                   <CheckCircle2 size={14} /> PASS
                 </span>
               ) : (
-                <span className="flex items-center gap-1 text-xs font-semibold text-red-600">
+                <span className="flex items-center gap-1 text-xs font-semibold text-danger">
                   <XCircle size={14} /> FAIL
                 </span>
               )}
@@ -130,15 +130,15 @@ export function TrustNetPanel({ data, compact = false }: TrustNetPanelProps) {
 
       {/* Fraud Indicators */}
       {trustnet.fraud_indicators.length > 0 && (
-        <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-200">
+        <div className="mt-6 p-4 rounded-xl bg-danger/5 border border-danger/20">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle size={16} className="text-red-600" />
-            <span className="text-sm font-bold text-red-700">Fraud Indicators Detected</span>
+            <AlertTriangle size={16} className="text-danger" />
+            <span className="text-sm font-bold text-danger">Fraud Indicators Detected</span>
           </div>
           <ul className="space-y-1">
             {trustnet.fraud_indicators.map((indicator, i) => (
-              <li key={i} className="text-sm text-red-600 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              <li key={i} className="text-sm text-danger flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-danger" />
                 {indicator}
               </li>
             ))}

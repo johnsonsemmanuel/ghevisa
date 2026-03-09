@@ -11,42 +11,75 @@ function PaymentCallbackContent() {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [message, setMessage] = useState("");
+  const [referenceNumber, setReferenceNumber] = useState<string | null>(null);
 
+  // Support both legacy references and GCB merchantRef
   const reference = searchParams.get("reference") || searchParams.get("trxref");
+  const merchantRef = searchParams.get("merchantRef") || searchParams.get("merchant_ref");
 
   useEffect(() => {
+    // Handle GCB Payment Gateway redirect
+    if (merchantRef) {
+      verifyGcbPayment();
+      return;
+    }
+
+    // Handle legacy payment providers
     if (!reference) {
       setStatus("failed");
       setMessage("No payment reference provided");
       return;
     }
 
-    const verifyPayment = async () => {
-      try {
-        // Verify payment status with backend (server checks with provider)
-        const res = await api.post("/applicant/payment/verify", {
-          reference: reference,
-        });
+    verifyLegacyPayment();
+  }, [reference, merchantRef]);
 
-        if (res.data.success && res.data.status === "completed") {
-          setStatus("success");
-          setMessage("Payment completed successfully! Your application has been submitted.");
-        } else if (res.data.status === "pending") {
-          setStatus("success");
-          setMessage("Payment is being processed. You will be notified once confirmed.");
-        } else {
-          setStatus("failed");
-          setMessage(res.data.message || "Payment verification failed. Please contact support.");
-        }
-      } catch (err) {
-        // If verification endpoint fails, show pending message instead of faking success
+  const verifyGcbPayment = async () => {
+    try {
+      const res = await api.get("/gcb/verify", {
+        params: { merchantRef: merchantRef }
+      });
+
+      if (res.data.success && res.data.status === "completed") {
+        setStatus("success");
+        setMessage(res.data.message || "Payment completed successfully! Your application has been submitted.");
+        setReferenceNumber(res.data.reference_number);
+      } else if (res.data.status === "pending") {
+        setStatus("loading");
+        setMessage("Payment is being processed. Please wait...");
+        // Retry after 3 seconds
+        setTimeout(verifyGcbPayment, 3000);
+      } else {
         setStatus("failed");
-        setMessage("Unable to verify payment. Please check your dashboard for status updates or contact support.");
+        setMessage(res.data.message || "Payment verification failed. Please contact support.");
       }
-    };
+    } catch (err) {
+      setStatus("failed");
+      setMessage("Unable to verify payment. Please check your dashboard for status updates or contact support.");
+    }
+  };
 
-    verifyPayment();
-  }, [reference, searchParams]);
+  const verifyLegacyPayment = async () => {
+    try {
+      const res = await api.post("/applicant/payment/verify", {
+        reference: reference,
+      });
+
+      if (res.data.success && res.data.status === "completed") {
+        setStatus("success");
+        setMessage("Payment completed successfully! Your application has been submitted.");
+      } else if (res.data.status === "pending") {
+        setStatus("success");
+        setMessage("Payment is being processed. You will be notified once confirmed.");
+      } else {
+        setStatus("failed");
+        setMessage(res.data.message || "Payment verification failed. Please contact support.");
+      }
+    } catch (err) {
+      setStatus("failed");
+      setMessage("Unable to verify payment. Please check your dashboard for status updates or contact support.");
+    }
+  };
 
   useEffect(() => {
     if (status === "success") {

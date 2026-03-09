@@ -259,6 +259,35 @@ export default function ApplicationDetailPage() {
         </div>
       )}
 
+      {/* ── Denied Banner ── */}
+      {application.status === "denied" && (
+        <div className="rounded-2xl bg-gradient-to-r from-danger/10 via-danger/5 to-rose-50/5 border border-danger/20 p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-danger/10 flex items-center justify-center shrink-0">
+              <AlertCircle size={28} className="text-danger" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-text-primary mb-1">
+                Application Denied
+              </h3>
+              <p className="text-sm text-text-secondary">
+                Your visa application has been denied. Please review the decision notes below for more information. If you need assistance, contact our support team.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<MessageSquare size={14} />}
+                onClick={() => router.push("/dashboard/applicant/support")}
+              >
+                Talk to Support
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6 w-full">

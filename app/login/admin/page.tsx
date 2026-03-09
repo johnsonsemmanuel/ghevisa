@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
 
       // Check if user is admin
-      if (user.role !== "admin") {
+      if (user.role !== "SYSTEM_ADMIN") {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         toast.error("Access denied. This portal is for administrators only.");

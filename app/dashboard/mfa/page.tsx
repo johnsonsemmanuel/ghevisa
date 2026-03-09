@@ -35,7 +35,7 @@ export default function MfaDashboard() {
   const { data: recentEscalations } = useQuery({
     queryKey: ["mfa-recent-escalations"],
     queryFn: () =>
-      api.get<PaginatedResponse<Application>>("/mfa/escalations", { params: { page: 1 } }).then((r) => r.data),
+      api.get<PaginatedResponse<Application>>("/mfa/escalations", { params: { page: 1, status: "approved" } }).then((r) => r.data),
   });
 
   const greeting = () => {
@@ -169,8 +169,8 @@ export default function MfaDashboard() {
       <div className="bg-white rounded-2xl border border-border shadow-sm mb-8">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
-            <h2 className="text-base font-bold text-text-primary">Recent Escalations</h2>
-            <p className="text-xs text-text-muted mt-0.5">Latest cases requiring MFA review</p>
+            <h2 className="text-base font-bold text-text-primary">Approved Applications</h2>
+            <p className="text-xs text-text-muted mt-0.5">Applications approved or issued via MFA</p>
           </div>
           <Button
             variant="secondary"
@@ -186,9 +186,9 @@ export default function MfaDashboard() {
             <div className="w-14 h-14 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Inbox size={24} className="text-text-muted" />
             </div>
-            <p className="text-text-primary font-semibold mb-1">No escalations yet</p>
+            <p className="text-text-primary font-semibold mb-1">No approved applications yet</p>
             <p className="text-sm text-text-muted mb-6 max-w-xs mx-auto">
-              Escalated cases from GIS will appear here.
+              Approved applications will appear here.
             </p>
           </div>
         ) : (
@@ -266,16 +266,16 @@ export default function MfaDashboard() {
           </div>
         </button>
         <button
-          onClick={() => router.push("/dashboard/mfa/escalations")}
+          onClick={() => router.push("/dashboard/mfa/escalations?status=approved")}
           className="card hover:border-accent/30 transition-colors text-left cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Shield size={20} className="text-primary" />
+            <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+              <CheckCircle2 size={20} className="text-success" />
             </div>
             <div>
-              <p className="font-semibold text-text-primary text-sm">All Escalations</p>
-              <p className="text-xs text-text-muted">{metrics?.total_escalated ?? 0} total cases</p>
+              <p className="font-semibold text-text-primary text-sm">Approved Applications</p>
+              <p className="text-xs text-text-muted">{metrics?.total_approved ?? 0} approved</p>
             </div>
           </div>
         </button>

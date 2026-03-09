@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badge";
 import { MetricsSkeleton } from "@/components/ui/skeleton";
 import {
-  Plus, FileText, Clock, CheckCircle2, AlertCircle,
+  Plus, FileText, Clock, CheckCircle2, AlertCircle, HelpCircle,
   ArrowRight, Plane, ChevronRight, Inbox, X,
 } from "lucide-react";
 import type { Application, PaginatedResponse } from "@/lib/types";
@@ -100,6 +100,28 @@ export default function ApplicantDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Denied Applications Support Banner ── */}
+      {!isLoading && apps.some(a => a.status === "denied") && (
+        <div className="rounded-2xl bg-gradient-to-r from-danger/10 via-danger/5 to-rose-50/5 border border-danger/20 p-6 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-danger/10 flex items-center justify-center shrink-0">
+              <AlertCircle size={24} className="text-danger" />
+            </div>
+            <div>
+              <h3 className="font-bold text-text-primary text-base">Need Assistance?</h3>
+              <p className="text-sm text-text-secondary">One or more of your applications were denied. Our support team can help you understand the next steps.</p>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/dashboard/applicant/support")}
+            leftIcon={<HelpCircle size={16} />}
+          >
+            Talk to Support
+          </Button>
+        </div>
+      )}
 
       {/* ── Metric Cards ── */}
       {isLoading ? (

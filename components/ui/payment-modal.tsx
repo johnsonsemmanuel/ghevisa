@@ -18,18 +18,24 @@ interface PaymentModalProps {
 
 const PAYMENT_METHODS = [
   {
-    id: "card",
+    id: "paystack_card",
     label: "Credit / Debit Card",
-    description: "Visa, Mastercard, or Verve",
+    description: "Visa, Mastercard, or Verve via Paystack",
     icon: <CreditCard size={22} className="text-info" />,
     badge: "Instant",
   },
   {
-    id: "momo",
+    id: "paystack_mobile_money",
     label: "Mobile Money",
-    description: "MTN MoMo, Vodafone Cash, AirtelTigo Money",
+    description: "MTN, Vodafone Cash, AirtelTigo via Paystack",
     icon: <Smartphone size={22} className="text-accent" />,
     badge: "Popular",
+  },
+  {
+    id: "bank_transfer",
+    label: "Bank Transfer (GCB)",
+    description: "Direct transfer to Ghana Commercial Bank",
+    icon: <Shield size={22} className="text-text-muted" />,
   },
 ];
 
@@ -145,17 +151,7 @@ export function PaymentModal({
             ))}
           </div>
 
-          {/* Demo Mode Notice */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-info/5 border border-info/20">
-            <AlertCircle size={18} className="text-info shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-text-primary">Demo Mode Active</p>
-              <p className="text-xs text-text-secondary mt-1">
-                This is a demonstration system. Payment will be automatically approved without actual transaction processing.
-                Your application will be immediately submitted for review.
-              </p>
-            </div>
-          </div>
+
 
           {/* Warning */}
           <div className="flex items-start gap-3 p-4 rounded-xl bg-warning/5 border border-warning/20">

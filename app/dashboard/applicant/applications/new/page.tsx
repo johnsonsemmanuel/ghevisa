@@ -25,7 +25,7 @@ import {
   type VisaFormField,
 } from "@/lib/visa-matrix";
 
-const STEPS = ["Purpose of Travel", "Visa Category", "Applicant Details", "Travel Details", "Documents", "Health Declaration", "Security Declaration", "Review & Pay"];
+const STEPS = ["Purpose of Travel", "Applicant Details", "Travel Details", "Documents", "Health Declaration", "Security Declaration", "Review & Pay"];
 
 const tierIcons: Record<string, React.ReactNode> = {
   standard: <Clock size={20} className="text-text-muted" />,
@@ -92,6 +92,133 @@ function clearDraft() {
   } catch { /* ignore */ }
 }
 
+// ── Email & Phone Validation Helpers ────────────────────
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
+function validateEmail(email: string): boolean {
+  if (!EMAIL_REGEX.test(email)) return false;
+  // Check for common typos
+  const domain = email.split("@")[1]?.toLowerCase() || "";
+  const suspiciousDomains = [
+    "gmial.com", "gmali.com", "gmal.com", "gamil.com", "gmail.co", "gmail.com.com",
+    "yaho.com", "yahooo.com", "yaho.co", "yahoo.co",
+    "hotmal.com", "hotmil.com", "hotmail.co",
+    "outlok.com", "olutlook.com", "outlook.co"
+  ];
+  if (suspiciousDomains.includes(domain)) return false;
+  // Must have at least 2-char TLD
+  const tld = domain.split(".").pop() || "";
+  if (tld.length < 2) return false;
+  return true;
+}
+
+interface CountryPhoneCode {
+  code: string;
+  country: string;
+  digits: number[]; // Allowed digit counts (national number, without country code)
+}
+
+const COUNTRY_PHONE_CODES: CountryPhoneCode[] = [
+  { code: "+233", country: "Ghana", digits: [9] },
+  { code: "+234", country: "Nigeria", digits: [10] },
+  { code: "+1", country: "USA/Canada", digits: [10] },
+  { code: "+44", country: "UK", digits: [10] },
+  { code: "+49", country: "Germany", digits: [10, 11] },
+  { code: "+33", country: "France", digits: [9] },
+  { code: "+39", country: "Italy", digits: [9, 10] },
+  { code: "+34", country: "Spain", digits: [9] },
+  { code: "+31", country: "Netherlands", digits: [9] },
+  { code: "+32", country: "Belgium", digits: [8, 9] },
+  { code: "+41", country: "Switzerland", digits: [9] },
+  { code: "+46", country: "Sweden", digits: [7, 8, 9] },
+  { code: "+47", country: "Norway", digits: [8] },
+  { code: "+45", country: "Denmark", digits: [8] },
+  { code: "+358", country: "Finland", digits: [9, 10] },
+  { code: "+48", country: "Poland", digits: [9] },
+  { code: "+43", country: "Austria", digits: [10, 11] },
+  { code: "+351", country: "Portugal", digits: [9] },
+  { code: "+30", country: "Greece", digits: [10] },
+  { code: "+353", country: "Ireland", digits: [9] },
+  { code: "+420", country: "Czech Rep.", digits: [9] },
+  { code: "+36", country: "Hungary", digits: [9] },
+  { code: "+40", country: "Romania", digits: [9] },
+  { code: "+380", country: "Ukraine", digits: [9] },
+  { code: "+7", country: "Russia", digits: [10] },
+  { code: "+90", country: "Turkey", digits: [10] },
+  { code: "+91", country: "India", digits: [10] },
+  { code: "+86", country: "China", digits: [11] },
+  { code: "+81", country: "Japan", digits: [10, 11] },
+  { code: "+82", country: "South Korea", digits: [10, 11] },
+  { code: "+61", country: "Australia", digits: [9] },
+  { code: "+64", country: "New Zealand", digits: [8, 9, 10] },
+  { code: "+55", country: "Brazil", digits: [10, 11] },
+  { code: "+52", country: "Mexico", digits: [10] },
+  { code: "+54", country: "Argentina", digits: [10] },
+  { code: "+56", country: "Chile", digits: [9] },
+  { code: "+57", country: "Colombia", digits: [10] },
+  { code: "+27", country: "South Africa", digits: [9] },
+  { code: "+254", country: "Kenya", digits: [9] },
+  { code: "+255", country: "Tanzania", digits: [9] },
+  { code: "+256", country: "Uganda", digits: [9] },
+  { code: "+251", country: "Ethiopia", digits: [9] },
+  { code: "+20", country: "Egypt", digits: [10] },
+  { code: "+212", country: "Morocco", digits: [9] },
+  { code: "+213", country: "Algeria", digits: [9] },
+  { code: "+216", country: "Tunisia", digits: [8] },
+  { code: "+237", country: "Cameroon", digits: [9] },
+  { code: "+225", country: "Côte d'Ivoire", digits: [10] },
+  { code: "+221", country: "Senegal", digits: [9] },
+  { code: "+228", country: "Togo", digits: [8] },
+  { code: "+229", country: "Benin", digits: [8] },
+  { code: "+226", country: "Burkina Faso", digits: [8] },
+  { code: "+223", country: "Mali", digits: [8] },
+  { code: "+224", country: "Guinea", digits: [9] },
+  { code: "+232", country: "Sierra Leone", digits: [8] },
+  { code: "+231", country: "Liberia", digits: [7, 8] },
+  { code: "+227", country: "Niger", digits: [8] },
+  { code: "+235", country: "Chad", digits: [8] },
+  { code: "+966", country: "Saudi Arabia", digits: [9] },
+  { code: "+971", country: "UAE", digits: [9] },
+  { code: "+974", country: "Qatar", digits: [8] },
+  { code: "+965", country: "Kuwait", digits: [8] },
+  { code: "+968", country: "Oman", digits: [8] },
+  { code: "+973", country: "Bahrain", digits: [8] },
+  { code: "+972", country: "Israel", digits: [9] },
+  { code: "+962", country: "Jordan", digits: [9] },
+  { code: "+961", country: "Lebanon", digits: [7, 8] },
+  { code: "+60", country: "Malaysia", digits: [9, 10] },
+  { code: "+65", country: "Singapore", digits: [8] },
+  { code: "+63", country: "Philippines", digits: [10] },
+  { code: "+66", country: "Thailand", digits: [9] },
+  { code: "+84", country: "Vietnam", digits: [9, 10] },
+  { code: "+62", country: "Indonesia", digits: [10, 11, 12] },
+  { code: "+92", country: "Pakistan", digits: [10] },
+  { code: "+880", country: "Bangladesh", digits: [10] },
+  { code: "+94", country: "Sri Lanka", digits: [9] },
+];
+
+function validatePhone(code: string, number: string): string | null {
+  const digits = number.replace(/\D/g, "");
+  if (!digits) return "Phone number is required";
+  const entry = COUNTRY_PHONE_CODES.find((c) => c.code === code);
+  if (!entry) return null; // Unknown code, accept any
+  const expectedLengths = entry.digits;
+  const min = Math.min(...expectedLengths);
+  const max = Math.max(...expectedLengths);
+  if (digits.length < min || digits.length > max) {
+    const expected = expectedLengths.length === 1 ? `${expectedLengths[0]}` : `${min}-${max}`;
+    return `⚠ ${entry.country} phone numbers require ${expected} digits (you entered ${digits.length}). Please verify.`;
+  }
+  return null;
+}
+
+function getPhonePlaceholder(code: string): string {
+  const entry = COUNTRY_PHONE_CODES.find((c) => c.code === code);
+  if (!entry) return "Enter phone number";
+  const len = entry.digits[0];
+  return "X".repeat(len);
+}
+
 function NewApplicationPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -108,6 +235,9 @@ function NewApplicationPageInner() {
   const [declarationCertified, setDeclarationCertified] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [emailWarning, setEmailWarning] = useState("");
+  const [phoneWarning, setPhoneWarning] = useState("");
+  const [phoneCode, setPhoneCode] = useState("+233");
 
   const defaultForm: Record<string, string> = {
     visa_channel: "", visa_type_id: "", service_tier_id: "", entry_type: "",
@@ -116,7 +246,7 @@ function NewApplicationPageInner() {
     country_of_birth: "", nationality: "",
     passport_number: "", passport_issue_date: "", passport_expiry: "",
     marital_status: "", profession: "",
-    email: "", phone: "",
+    email: "", phone: "", phone_code: "+233",
     intended_arrival: "", duration_days: "",
     visited_country_1: "", visited_country_2: "", visited_country_3: "",
   };
@@ -377,28 +507,34 @@ function NewApplicationPageInner() {
   const handlePay = async (method: string) => {
     if (!application) return;
     try {
-      // DEMO MODE: Use simulated payment for demo purposes
-      const res = await api.post(`/applicant/payment/simulate`, { application_id: application.id });
+      const res = await api.post(`/applicant/applications/${application.id}/payment/initialize`, {
+        payment_method: method,
+        currency: "USD"
+      });
 
       if (res.data.success) {
         clearDraft();
         setShowPaymentModal(false);
 
-        toast.success(
-          `${res.data.message}\n\n⚠️ ${res.data.demo_note}`,
-          { duration: 3000, icon: "✅" }
-        );
-
-        // Show completion popup instead of immediate redirect
-        setTimeout(() => {
+        if (res.data.authorization_url) {
+          // Redirect the user to Paystack's checkout page
+          window.location.href = res.data.authorization_url;
+        } else if (res.data.provider === 'bank_transfer') {
+          // For bank transfer, show a success message then a completion prompt
+          toast.success("Bank transfer initiated. Please follow the instructions to complete your payment.", { duration: 5000, icon: "🏦" });
+          setTimeout(() => {
+            setShowCompletionPopup(true);
+          }, 1000);
+        } else {
+          // Fallback
           setShowCompletionPopup(true);
-        }, 1000);
+        }
       } else {
-        toast.error(res.data.message || "Payment simulation failed");
+        toast.error(res.data.message || "Payment initialization failed");
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || "Payment failed");
+      toast.error(error.response?.data?.message || "Payment failed to initialize");
     }
   };
 
@@ -406,13 +542,10 @@ function NewApplicationPageInner() {
     const e: Record<string, string> = {};
     if (step === 0) {
       if (!form.visa_type_id) e.visa_type_id = "Select your purpose of travel";
-    }
-    if (step === 1) {
-      if (!form.visa_type_id) e.visa_type_id = "Select your purpose of travel";
       if (!form.entry_type) e.entry_type = "Select entry type";
       if (!form.service_tier_id) e.service_tier_id = "Select processing speed";
     }
-    if (step === 2) {
+    if (step === 1) {
       if (!form.last_name.trim()) e.last_name = "Surname is required";
       if (!form.first_name.trim()) e.first_name = "First name is required";
       if (!form.gender) e.gender = "Gender is required";
@@ -420,6 +553,9 @@ function NewApplicationPageInner() {
       if (!form.country_of_birth) e.country_of_birth = "Country of birth is required";
       if (!form.nationality) e.nationality = "Nationality is required";
       if (!form.passport_number.trim()) e.passport_number = "Passport number is required";
+      else if (!/^[A-Za-z0-9]{6,20}$/.test(form.passport_number.trim())) {
+        e.passport_number = "Please enter a valid passport number (6-20 alphanumeric characters only)";
+      }
       if (!form.passport_issue_date) e.passport_issue_date = "Issue date is required";
       if (!form.passport_expiry) e.passport_expiry = "Expiry date is required";
       else {
@@ -431,24 +567,29 @@ function NewApplicationPageInner() {
       if (!form.marital_status) e.marital_status = "Marital status is required";
       if (!form.profession.trim()) e.profession = "Profession is required";
       if (!form.email.trim()) e.email = "Email is required";
+      else if (!validateEmail(form.email)) e.email = "Please enter a valid email address";
       if (!form.phone.trim()) e.phone = "Phone number is required";
+      else {
+        const phoneErr = validatePhone(phoneCode, form.phone);
+        if (phoneErr) e.phone = phoneErr;
+      }
     }
-    if (step === 3 && visaConfig) {
+    if (step === 2 && visaConfig) {
       if (!form.intended_arrival) e.intended_arrival = "Arrival date is required";
       for (const f of visaConfig.specificFields) {
         if (!f.required) continue;
         if (f.conditionalOn) { const dv = form[f.conditionalOn.field]; const show = Array.isArray(f.conditionalOn.value) ? f.conditionalOn.value.includes(dv) : dv === f.conditionalOn.value; if (!show) continue; }
         if (!form[f.key]?.trim()) e[f.key] = `${f.label} is required`;
       }
-    } else if (step === 3) {
+    } else if (step === 2) {
       if (!form.intended_arrival) e.intended_arrival = "Required";
       if (!form.duration_days) e.duration_days = "Required";
     }
-    if (step === 4) {
+    if (step === 3) {
       const miss = reqDocs.filter((d) => d.required && !documents[d.key]);
       if (miss.length) { toast.error(`Upload required: ${miss.map((d) => d.label).join(", ")}`); return false; }
     }
-    if (step === 5) {
+    if (step === 4) {
       // Health Declaration validation
       if (!form.health_good_condition) e.health_good_condition = "Required";
       if (!form.health_recent_illness) e.health_recent_illness = "Required";
@@ -456,7 +597,7 @@ function NewApplicationPageInner() {
       if (!form.health_yellow_fever_vaccinated) e.health_yellow_fever_vaccinated = "Required";
       if (!form.health_chronic_conditions) e.health_chronic_conditions = "Required";
     }
-    if (step === 6) {
+    if (step === 5) {
       // Security Declaration validation
       if (declQuestions.length > 0) {
         for (const q of declQuestions) { if (!form[q.key]) e[q.key] = "Required"; }
@@ -470,8 +611,8 @@ function NewApplicationPageInner() {
 
   const nextStep = () => {
     if (!validate(currentStep)) return;
-    if (currentStep === 2) handleCreateDraft();
-    else if (currentStep === 3) handleUpdateStep(currentStep + 1);
+    if (currentStep === 1) handleCreateDraft();
+    else if (currentStep === 2) handleUpdateStep(currentStep + 1);
     else setCurrentStep((p) => Math.min(p + 1, STEPS.length - 1));
   };
 
@@ -505,8 +646,8 @@ function NewApplicationPageInner() {
         </div>
       </div>
 
-      {/* Dynamic Pricing Display - Shows on steps 2-7 after visa selection */}
-      {currentStep >= 2 && fees.total > 0 && (
+      {/* Dynamic Pricing Display - Shows on steps 1-6 after visa selection */}
+      {currentStep >= 1 && fees.total > 0 && (
         <div className="bg-gradient-to-r from-accent/5 to-primary/5 rounded-2xl border border-accent/20 p-5 mb-6 shadow-sm">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -651,123 +792,8 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 1: Application Summary ── */}
+        {/* ── STEP 1: Applicant Details ── */}
         {currentStep === 1 && (
-          <div>
-            <h2 className="text-lg font-semibold text-text-primary mb-1">Application Summary</h2>
-            <p className="text-sm text-text-secondary mb-6">Review your selections before proceeding to fill in your details.</p>
-
-            {selVT ? (
-              <div className="space-y-4">
-                {/* Visa Type Selection */}
-                <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <CheckCircle size={20} className="text-accent" />
-                      <div>
-                        <p className="font-semibold text-text-primary">{selVT.name}</p>
-                        <p className="text-xs text-text-muted">Purpose of travel selected</p>
-                      </div>
-                    </div>
-                    <button type="button" onClick={() => { setCurrentStep(0); }} className="text-xs text-accent hover:underline cursor-pointer">
-                      Change Selection
-                    </button>
-                  </div>
-                </div>
-
-                {/* Entry Type Selection */}
-                {form.entry_type && (
-                  <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <CheckCircle size={20} className="text-accent" />
-                        <div>
-                          <p className="font-semibold text-text-primary">{form.entry_type === "multiple" ? "Multiple Entry" : "Single Entry"}</p>
-                          <p className="text-xs text-text-muted">Entry type selected</p>
-                        </div>
-                      </div>
-                      <button type="button" onClick={() => setShowEntryTypeModal(true)} className="text-xs text-accent hover:underline cursor-pointer">
-                        Change Entry Type
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Processing Speed Selection */}
-                {form.service_tier_id && selST && (
-                  <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <CheckCircle size={20} className="text-accent" />
-                        <div>
-                          <p className="font-semibold text-text-primary">{selST.name}</p>
-                          <p className="text-xs text-text-muted">{selST.processing_time_display} processing</p>
-                        </div>
-                      </div>
-                      <button type="button" onClick={() => setShowSpeedModal(true)} className="text-xs text-accent hover:underline cursor-pointer">
-                        Change Speed
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Complete Pricing */}
-                {form.entry_type && form.service_tier_id && (
-                  <div className="p-4 rounded-xl bg-gradient-to-r from-accent/5 to-primary/5 border border-accent/20">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-text-muted uppercase tracking-wider font-medium">Total Amount</p>
-                          <p className="text-3xl font-bold text-accent">
-                            ${fees.total > 0 ? fees.total.toFixed(2) : (260 * (form.entry_type === "multiple" ? 1.8 : 1) * (selST ? Number(selST.fee_multiplier) || 1 : 1)).toFixed(2)}
-                          </p>
-                          <p className="text-xs text-text-muted mt-0.5">
-                            {fees.total > 0
-                              ? `$${fees.base.toFixed(2)} + $${fees.entry.toFixed(2)} + $${fees.processing.toFixed(2)}`
-                              : `$260 × ${(form.entry_type === "multiple" ? 1.8 : 1).toFixed(1)} × ${(selST ? Number(selST.fee_multiplier) || 1 : 1).toFixed(1)}`}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-text-muted">Ready to proceed?</p>
-                          <p className="text-xs text-accent">Continue to fill your details</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Missing Items Alert */}
-                {(!form.entry_type || !form.service_tier_id) && (
-                  <div className="p-4 rounded-xl bg-warning/5 border border-warning/30">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle size={20} className="text-warning" />
-                      <div>
-                        <p className="text-sm font-semibold text-warning">Complete Your Selection</p>
-                        <p className="text-xs text-text-muted">
-                          {!form.entry_type && "Please select an entry type. "}
-                          {!form.service_tier_id && "Please select a processing speed."}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center mx-auto mb-4">
-                  <Compass size={32} className="text-text-muted" />
-                </div>
-                <p className="text-text-muted">No visa type selected yet.</p>
-                <button type="button" onClick={() => setCurrentStep(0)} className="mt-4 text-accent hover:underline cursor-pointer">
-                  Go back to select visa type
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── STEP 2: Applicant Details ── */}
-        {currentStep === 2 && (
           <div>
             <h2 className="text-lg font-semibold text-text-primary mb-1">Applicant Details</h2>
             <p className="text-sm text-text-secondary mb-6">Please provide your personal and passport information.</p>
@@ -826,15 +852,79 @@ function NewApplicationPageInner() {
                 <h3 className="text-sm font-bold text-text-primary">Contact Information</h3>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
-                <Input label="Email Address *" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} error={errors.email} placeholder="you@example.com" required />
-                <Input label="Phone Number *" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} error={errors.phone} placeholder="+233 XX XXX XXXX" required />
+                <div>
+                  <Input label="Email Address *" type="email" value={form.email} onChange={(e) => {
+                    set("email", e.target.value);
+                    const val = e.target.value.trim();
+                    if (val && !validateEmail(val)) {
+                      setEmailWarning("⚠ This does not appear to be a valid email address. Please check for typos.");
+                    } else {
+                      setEmailWarning("");
+                    }
+                  }} error={errors.email} placeholder="you@example.com" required />
+                  {emailWarning && !errors.email && (
+                    <div className="flex items-start gap-2 mt-1.5 p-2.5 rounded-lg bg-amber-50 border border-amber-200">
+                      <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-700 font-medium">{emailWarning}</p>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-1">Phone Number *</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={phoneCode}
+                      onChange={(e) => {
+                        setPhoneCode(e.target.value);
+                        set("phone_code", e.target.value);
+                        // Re-validate
+                        if (form.phone.trim()) {
+                          const err = validatePhone(e.target.value, form.phone);
+                          setPhoneWarning(err || "");
+                        }
+                      }}
+                      className="w-[140px] px-3 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    >
+                      {COUNTRY_PHONE_CODES.map((c) => (
+                        <option key={c.code + c.country} value={c.code}>{c.code} {c.country}</option>
+                      ))}
+                    </select>
+                    <div className="flex-1">
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/[^\d]/g, "");
+                          set("phone", digits);
+                          if (digits) {
+                            const err = validatePhone(phoneCode, digits);
+                            setPhoneWarning(err || "");
+                          } else {
+                            setPhoneWarning("");
+                          }
+                        }}
+                        placeholder={getPhonePlaceholder(phoneCode)}
+                        className={`w-full px-4 py-2.5 bg-surface border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 ${errors.phone ? "border-danger" : "border-border"}`}
+                        required
+                      />
+                    </div>
+                  </div>
+                  {errors.phone && <p className="text-xs text-danger mt-1">{errors.phone}</p>}
+                  {phoneWarning && !errors.phone && (
+                    <div className="flex items-start gap-2 mt-1.5 p-2.5 rounded-lg bg-amber-50 border border-amber-200">
+                      <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-700 font-medium">{phoneWarning}</p>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-text-muted mt-1">Enter digits only, without the country code prefix</p>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* ── STEP 3: Travel Details (visa-specific merged) ── */}
-        {currentStep === 3 && (
+        {/* ── STEP 2: Travel Details (visa-specific merged) ── */}
+        {currentStep === 2 && (
           <div>
             <h2 className="text-lg font-semibold text-text-primary mb-1">{visaConfig?.stepTitle || "Travel Details"}</h2>
             <p className="text-sm text-text-secondary mb-6">{visaConfig?.stepDescription || "Provide your travel and stay information."}</p>
@@ -888,8 +978,8 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 4: Document Upload ── */}
-        {currentStep === 4 && (
+        {/* ── STEP 3: Document Upload ── */}
+        {currentStep === 3 && (
           <div>
             <h2 className="text-lg font-semibold text-text-primary mb-1">Document Upload</h2>
             <p className="text-sm text-text-secondary mb-2">Upload the required documents to support your application.</p>
@@ -952,8 +1042,8 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 5: Health Declaration ── */}
-        {currentStep === 5 && (
+        {/* ── STEP 4: Health Declaration ── */}
+        {currentStep === 4 && (
           <div>
             <div className="flex items-center gap-3 mb-1">
               <ShieldCheck size={22} className="text-success" />
@@ -1086,8 +1176,8 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 6: Security & Travel Declaration ── */}
-        {currentStep === 6 && (
+        {/* ── STEP 5: Security & Travel Declaration ── */}
+        {currentStep === 5 && (
           <div>
             <div className="flex items-center gap-3 mb-1">
               <ShieldCheck size={22} className="text-primary" />
@@ -1140,8 +1230,8 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 7: Review & Payment ── */}
-        {currentStep === 7 && (
+        {/* ── STEP 6: Review & Payment ── */}
+        {currentStep === 6 && (
           <div>
             <h2 className="text-lg font-semibold text-text-primary mb-1">Review Your Application</h2>
             <p className="text-sm text-text-secondary mb-6">Please confirm all details before proceeding to payment.</p>
@@ -1261,7 +1351,7 @@ function NewApplicationPageInner() {
             {lastSaved && <span className="text-[11px] text-text-muted hidden sm:block">Saved at {lastSaved}</span>}
             {currentStep < STEPS.length - 1 ? (
               <Button onClick={nextStep} loading={loading}
-                disabled={(currentStep === 0 && !form.visa_type_id) || (currentStep === 1 && (!form.visa_type_id || !form.entry_type || !form.service_tier_id))}>
+                disabled={(currentStep === 0 && (!form.visa_type_id || !form.entry_type || !form.service_tier_id))}>
                 Continue <ArrowRight size={16} className="ml-1" />
               </Button>
             ) : (

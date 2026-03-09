@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/input";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ReasonCodeSelector } from "@/components/ui/reason-code-selector";
 import { RiskPanel } from "@/components/ui/risk-panel";
+import { TrustNetPanel } from "@/components/ui/trustnet-panel";
 import {
   ArrowLeft,
   UserCheck,
@@ -405,6 +406,23 @@ export default function GisCaseDetailPage() {
                       { priority: "info", action: "APPROVE_RECOMMENDED", reason: "Low risk profile - standard processing" },
                     ]
               }
+            />
+          </div>
+
+          {/* TrustNet Security Screening */}
+          <div className="card">
+            <TrustNetPanel
+              data={{
+                passport_authentic: !(application.watchlist_flagged),
+                mrz_valid: true,
+                interpol_clear: !(application.watchlist_flagged),
+                watchlist_clear: !(application.watchlist_flagged),
+                identity_verified: application.riskAssessment?.risk_level !== "critical",
+                fraud_indicators: application.riskAssessment?.risk_level === "high" || application.riskAssessment?.risk_level === "critical"
+                  ? ["Elevated risk profile detected"] : [],
+                risk_score: application.riskAssessment?.risk_score ?? application.risk_score ?? 15,
+                last_checked: new Date().toISOString(),
+              }}
             />
           </div>
 

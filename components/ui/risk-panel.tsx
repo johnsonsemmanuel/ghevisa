@@ -35,30 +35,30 @@ interface RiskPanelProps {
 
 const riskLevelConfig = {
   low: {
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
+    color: "text-success",
+    bg: "bg-success/5",
+    border: "border-success/20",
     icon: CheckCircle2,
     label: "Low Risk",
   },
   medium: {
-    color: "text-amber-600",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
+    color: "text-warning",
+    bg: "bg-warning/5",
+    border: "border-warning/20",
     icon: AlertTriangle,
     label: "Medium Risk",
   },
   high: {
-    color: "text-orange-600",
-    bg: "bg-orange-50",
-    border: "border-orange-200",
+    color: "text-warning",
+    bg: "bg-warning/5",
+    border: "border-warning/20",
     icon: AlertTriangle,
     label: "High Risk",
   },
   critical: {
-    color: "text-red-600",
-    bg: "bg-red-50",
-    border: "border-red-200",
+    color: "text-danger",
+    bg: "bg-danger/5",
+    border: "border-danger/20",
     icon: XCircle,
     label: "Critical Risk",
   },
@@ -99,17 +99,16 @@ export function RiskPanel({
         {/* Risk Score Bar */}
         <div className="h-3 bg-white rounded-full overflow-hidden shadow-inner">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              riskLevel === "low"
-                ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+            className={`h-full rounded-full transition-all duration-500 ${riskLevel === "low"
+                ? "bg-success"
                 : riskLevel === "medium"
-                ? "bg-gradient-to-r from-amber-400 to-amber-500"
-                : riskLevel === "high"
-                ? "bg-gradient-to-r from-orange-400 to-orange-500"
-                : riskLevel === "critical"
-                ? "bg-gradient-to-r from-red-400 to-red-500"
-                : "bg-slate-300"
-            }`}
+                  ? "bg-warning"
+                  : riskLevel === "high"
+                    ? "bg-warning"
+                    : riskLevel === "critical"
+                      ? "bg-danger"
+                      : "bg-slate-300"
+              }`}
             style={{ width: `${riskScore ?? 0}%` }}
           />
         </div>
@@ -117,14 +116,14 @@ export function RiskPanel({
 
       {/* Watchlist Alert */}
       {watchlistFlagged && (
-        <div className="p-4 rounded-xl bg-red-50 border-2 border-red-200">
+        <div className="p-4 rounded-xl bg-danger/5 border-2 border-danger/20">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-              <FileWarning size={20} className="text-red-600" />
+            <div className="w-10 h-10 rounded-lg bg-danger/10 flex items-center justify-center">
+              <FileWarning size={20} className="text-danger" />
             </div>
             <div>
-              <p className="font-semibold text-red-700">Watchlist Match Detected</p>
-              <p className="text-sm text-red-600">Manual review required before approval</p>
+              <p className="font-semibold text-danger">Watchlist Match Detected</p>
+              <p className="text-sm text-danger">Manual review required before approval</p>
             </div>
           </div>
         </div>
@@ -141,29 +140,27 @@ export function RiskPanel({
             {factors.map((factor, i) => (
               <div
                 key={i}
-                className={`p-3 rounded-xl border ${
-                  factor.triggered
-                    ? "bg-red-50 border-red-200"
-                    : "bg-emerald-50 border-emerald-200"
-                }`}
+                className={`p-3 rounded-xl border ${factor.triggered
+                    ? "bg-danger/5 border-danger/20"
+                    : "bg-success/5 border-success/20"
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {factor.triggered ? (
-                      <XCircle size={16} className="text-red-500" />
+                      <XCircle size={16} className="text-danger" />
                     ) : (
-                      <CheckCircle2 size={16} className="text-emerald-500" />
+                      <CheckCircle2 size={16} className="text-success" />
                     )}
                     <span className="text-sm font-medium text-slate-700">
                       {factor.name.replace(/_/g, " ")}
                     </span>
                   </div>
                   <span
-                    className={`text-xs font-bold px-2 py-1 rounded-full ${
-                      factor.triggered
-                        ? "bg-red-100 text-red-700"
-                        : "bg-emerald-100 text-emerald-700"
-                    }`}
+                    className={`text-xs font-bold px-2 py-1 rounded-full ${factor.triggered
+                        ? "bg-danger/10 text-danger"
+                        : "bg-success/10 text-success"
+                      }`}
                   >
                     +{factor.score}
                   </span>
@@ -188,29 +185,27 @@ export function RiskPanel({
             {recommendations.map((rec, i) => (
               <div
                 key={i}
-                className={`p-3 rounded-xl border ${
-                  rec.priority === "critical"
-                    ? "bg-red-50 border-red-200"
+                className={`p-3 rounded-xl border ${rec.priority === "critical"
+                    ? "bg-danger/5 border-danger/20"
                     : rec.priority === "high"
-                    ? "bg-orange-50 border-orange-200"
-                    : rec.priority === "medium"
-                    ? "bg-amber-50 border-amber-200"
-                    : rec.priority === "info"
-                    ? "bg-emerald-50 border-emerald-200"
-                    : "bg-slate-50 border-slate-200"
-                }`}
+                      ? "bg-warning/5 border-warning/20"
+                      : rec.priority === "medium"
+                        ? "bg-warning/5 border-warning/20"
+                        : rec.priority === "info"
+                          ? "bg-success/5 border-success/20"
+                          : "bg-slate-50 border-slate-200"
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   <span
-                    className={`text-xs font-bold px-2 py-1 rounded uppercase ${
-                      rec.priority === "critical"
-                        ? "bg-red-100 text-red-700"
+                    className={`text-xs font-bold px-2 py-1 rounded uppercase ${rec.priority === "critical"
+                        ? "bg-danger/10 text-danger"
                         : rec.priority === "high"
-                        ? "bg-orange-100 text-orange-700"
-                        : rec.priority === "medium"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-emerald-100 text-emerald-700"
-                    }`}
+                          ? "bg-warning/10 text-warning"
+                          : rec.priority === "medium"
+                            ? "bg-warning/10 text-warning"
+                            : "bg-success/10 text-success"
+                      }`}
                   >
                     {rec.priority}
                   </span>

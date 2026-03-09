@@ -8,7 +8,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/badge";
-import { Plus, CheckCircle2 } from "lucide-react";
+import { Plus, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
 import type { Application, PaginatedResponse } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 
@@ -114,6 +114,29 @@ export default function ApplicationsListPage() {
         </Button>
       }
     >
+      {/* ── Denied Applications Support Banner ── */}
+      {!isLoading && data?.data.some(a => a.status === "denied") && (
+        <div className="rounded-2xl bg-gradient-to-r from-danger/10 via-danger/5 to-rose-50/5 border border-danger/20 p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-danger/10 flex items-center justify-center shrink-0">
+              <AlertCircle size={20} className="text-danger" />
+            </div>
+            <div>
+              <h3 className="font-bold text-text-primary text-sm">Application(s) Denied?</h3>
+              <p className="text-xs text-text-secondary">If any of your applications have been denied, our support team is available to help you understand the reason.</p>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => router.push("/dashboard/applicant/support")}
+            leftIcon={<HelpCircle size={14} />}
+          >
+            Talk to Support
+          </Button>
+        </div>
+      )}
+
       <DataTable<Application>
         columns={columns}
         data={data?.data || []}
