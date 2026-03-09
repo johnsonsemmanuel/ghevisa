@@ -118,6 +118,22 @@ export default function AdminApplicationDetailPage() {
                   <p className="text-sm text-text-muted">—</p>
                 )}
               </div>
+              <div>
+                <p className="text-xs text-text-muted mb-1">Reviewed By</p>
+                <p className="text-sm font-medium text-text-primary">
+                  {application.reviewing_officer
+                    ? `${application.reviewing_officer.first_name} ${application.reviewing_officer.last_name}`
+                    : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted mb-1">Approved By</p>
+                <p className="text-sm font-medium text-text-primary">
+                  {application.approval_officer
+                    ? `${application.approval_officer.first_name} ${application.approval_officer.last_name}`
+                    : "—"}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -437,6 +453,22 @@ export default function AdminApplicationDetailPage() {
                 <div className="flex justify-between">
                   <span className="text-text-muted">Submitted</span>
                   <span className="text-text-primary">{new Date(application.submitted_at).toLocaleString()}</span>
+                </div>
+              )}
+              {application.reviewing_officer && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-text-muted">Reviewer</span>
+                  <span className="text-text-primary text-right">
+                    {application.reviewing_officer.first_name} {application.reviewing_officer.last_name}
+                  </span>
+                </div>
+              )}
+              {application.approval_officer && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-text-muted">Approval Officer</span>
+                  <span className="text-text-primary text-right">
+                    {application.approval_officer.first_name} {application.approval_officer.last_name}
+                  </span>
                 </div>
               )}
               {application.decided_at && (

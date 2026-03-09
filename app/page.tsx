@@ -260,13 +260,13 @@ export default function Home() {
           <div className={`text-center mb-16 ${visaTypes.inView ? "animate-slide-up" : "opacity-0"}`}>
             <div className="inline-flex items-center gap-2 bg-[#C8962E]/8 border border-[#C8962E]/15 rounded-full px-4 py-1.5 mb-4">
               <Globe size={14} className="text-[#C8962E]" />
-              <span className="text-[#C8962E] text-xs font-semibold uppercase tracking-wider">Visa Categories</span>
+              <span className="text-[#C8962E] text-xs font-semibold uppercase tracking-wider">Visa Types</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
               Visa <span className="text-[#C8962E]">Types</span>
             </h2>
             <p className="text-gray-500 max-w-lg mx-auto">
-              Select the visa category that best matches the purpose of travel to Ghana.
+              Select the visa type that best matches the purpose of travel to Ghana.
             </p>
           </div>
 

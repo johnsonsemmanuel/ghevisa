@@ -69,8 +69,30 @@ export const DESTINATION_CITIES = [
 export const ECOWAS_CODES = ["NG", "SN", "CI", "ML", "BF", "NE", "BJ", "TG", "GN", "SL", "LR", "GM", "GW", "CV"];
 export const AU_CODES = [...ECOWAS_CODES, "KE", "TZ", "RW", "UG", "ET", "DJ", "SO", "SS", "SD", "ER", "ZA", "NA", "BW", "ZW", "ZM", "MW", "MZ", "AO", "SZ", "LS", "MA", "TN", "DZ", "EG", "LY", "GA", "CM", "CG", "CD", "CF", "TD", "GQ", "ST"];
 export const CARIBBEAN_CODES = ["BB", "BS", "GD", "JM", "TT", "AG", "DM", "KN", "LC", "VC"];
+export const EVISA_REQUIRED_CODES = ["GB", "DE", "FR", "IT", "ES", "NL", "BE", "US", "CA", "CN", "IN", "JP", "KR", "AU", "NZ", "BR", "MX", "AE", "SA", "RU"];
+
+// Authorization types
+export type AuthorizationType = 'visa_free' | 'eta' | 'voa' | 'evoa' | 'evisa' | 'embassy_visa' | 'transit' | 'conditional';
+
 export function isEcowas(c: string) { return ECOWAS_CODES.includes(c); }
 export function isAU(c: string) { return AU_CODES.includes(c); }
+export function isCaribbean(c: string) { return CARIBBEAN_CODES.includes(c); }
+export function isEtaEligible(c: string) { return ECOWAS_CODES.includes(c) || AU_CODES.includes(c) || CARIBBEAN_CODES.includes(c); }
+export function requiresEvisa(c: string) { return EVISA_REQUIRED_CODES.includes(c) || !isEtaEligible(c); }
+
+export function getAuthorizationType(countryCode: string): AuthorizationType {
+  if (ECOWAS_CODES.includes(countryCode)) return 'eta';
+  if (AU_CODES.includes(countryCode)) return 'eta';
+  if (CARIBBEAN_CODES.includes(countryCode)) return 'eta';
+  return 'evisa';
+}
+
+export function getEtaFee(countryCode: string): number {
+  if (ECOWAS_CODES.includes(countryCode)) return 10;
+  if (AU_CODES.includes(countryCode)) return 20;
+  if (CARIBBEAN_CODES.includes(countryCode)) return 15;
+  return 60; // Default eVisa fee
+}
 
 export const PORTS_OF_ENTRY = [
   { value: "KIA", label: "Kotoka International Airport (Accra)" },
@@ -207,6 +229,77 @@ export const GHANA_CITIES: Record<string, { value: string; label: string }[]> = 
 };
 
 export const VISA_CONFIGS: Record<string, VisaTypeConfig> = {
+  eta: {
+    slug: "eta", stepTitle: "Travel Registration", stepDescription: "Complete your Electronic Travel Authorization for Ghana.",
+    maxDurationDays: 90, durationWarningDays: 60,
+    requiredDocuments: [
+      { key: "passport_bio", label: "Passport Bio-data Page", description: "Clear scan of passport bio page", required: true },
+      { key: "passport_photo", label: "Passport-Sized Photograph", description: "Recent photo (white background)", required: true },
+    ],
+    specificFields: [
+      { key: "intended_arrival", label: "Intended Arrival Date", type: "date", required: true, validation: { minDate: "future_3d" } },
+      { key: "port_of_entry", label: "Port of Entry", type: "select", required: true, options: PORTS_OF_ENTRY },
+      { key: "airline", label: "Airline", type: "text", placeholder: "e.g. Kenya Airways, Ethiopian Airlines", required: true },
+      { key: "flight_number", label: "Flight Number", type: "text", placeholder: "e.g. KQ507", required: true },
+      { key: "purpose_of_visit", label: "Purpose of Visit", type: "select", required: true, options: [
+        { value: "tourism", label: "Tourism / Holiday" },
+        { value: "business", label: "Business Meeting" },
+        { value: "family", label: "Family Visit" },
+        { value: "transit", label: "Transit" },
+        { value: "other", label: "Other" },
+      ]},
+      { key: "address_in_ghana", label: "Address in Ghana", type: "text", placeholder: "Hotel or host address", required: true, fullWidth: true },
+      { key: "host_name", label: "Host Name (if applicable)", type: "text", placeholder: "Full name of host", required: false },
+      { key: "host_phone", label: "Host Phone", type: "tel", placeholder: "+233 XX XXX XXXX", required: false },
+      { key: "hotel_booking_reference", label: "Hotel Booking Reference", type: "text", placeholder: "Booking confirmation number", required: false },
+    ],
+    declarationQuestions: [
+      { key: "entry_denied_before", question: "Have you ever been denied entry to Ghana?" },
+      { key: "criminal_conviction", question: "Do you have any criminal convictions?" },
+      { key: "previous_ghana_visa", question: "Have you previously held a Ghana visa?" },
+    ],
+    tips: [
+      "ETA is processed within 24-48 hours.",
+      "You will receive a QR code for airport scanning.",
+      "ETA is valid for 90 days from approval.",
+      "Yellow fever vaccination certificate required at port of entry.",
+    ],
+  },
+
+  voa: {
+    slug: "voa", stepTitle: "Visa on Arrival Pre-Registration", stepDescription: "Pre-register for your visa on arrival in Ghana.",
+    maxDurationDays: 30, durationWarningDays: 14,
+    requiredDocuments: [
+      { key: "passport_bio", label: "Passport Bio-data Page", description: "Clear scan of passport bio page", required: true },
+      { key: "passport_photo", label: "Passport-Sized Photograph", description: "Recent photo (white background)", required: true },
+      { key: "return_ticket", label: "Return/Onward Ticket", description: "Confirmed flight itinerary", required: true },
+    ],
+    specificFields: [
+      { key: "intended_arrival", label: "Intended Arrival Date", type: "date", required: true, validation: { minDate: "future_3d" } },
+      { key: "port_of_entry", label: "Port of Entry", type: "select", required: true, options: PORTS_OF_ENTRY },
+      { key: "airline", label: "Airline", type: "text", placeholder: "e.g. British Airways", required: true },
+      { key: "flight_number", label: "Flight Number", type: "text", placeholder: "e.g. BA078", required: true },
+      { key: "purpose_of_visit", label: "Purpose of Visit", type: "select", required: true, options: [
+        { value: "tourism", label: "Tourism / Holiday" },
+        { value: "business", label: "Business Meeting" },
+        { value: "family", label: "Family Visit" },
+        { value: "other", label: "Other" },
+      ]},
+      { key: "address_in_ghana", label: "Address in Ghana", type: "text", placeholder: "Hotel or host address", required: true, fullWidth: true },
+      { key: "host_name", label: "Host Name", type: "text", placeholder: "Full name of host", required: false },
+      { key: "host_phone", label: "Host Phone", type: "tel", placeholder: "+233 XX XXX XXXX", required: false },
+    ],
+    declarationQuestions: [
+      { key: "entry_denied_before", question: "Have you ever been denied entry to Ghana?" },
+      { key: "criminal_conviction", question: "Do you have any criminal convictions?" },
+    ],
+    tips: [
+      "Pre-registration speeds up your arrival process.",
+      "Bring printed confirmation to the airport.",
+      "VOA fee is payable at the port of entry.",
+    ],
+  },
+
   tourism: {
     slug: "tourism", stepTitle: "Travel Details", stepDescription: "Provide your travel and stay information.",
     maxDurationDays: 90, durationWarningDays: 60,

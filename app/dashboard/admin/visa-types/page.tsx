@@ -229,7 +229,7 @@ export default function AdminVisaTypesPage() {
   return (
     <DashboardShell
       title="Visa Types"
-      description="Manage visa categories and their requirements"
+      description="Manage visa types and their requirements"
       actions={
         <Button size="sm" leftIcon={<Plus size={14} />} onClick={openCreateModal}>
           Add Visa Type

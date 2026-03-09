@@ -23,18 +23,21 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+      // Get user directly from localStorage after login completes
+      // The login function updates localStorage synchronously
+      const loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
 
       // Check if user is applicant - redirect others to appropriate portals
       const applicantRoles = ["applicant", "APPLICANT"];
-      if (!applicantRoles.includes(user.role)) {
+      if (!loggedInUser.role || !applicantRoles.includes(loggedInUser.role)) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         const adminRoles = ["admin", "SYSTEM_ADMIN"];
-        if (adminRoles.includes(user.role)) {
+        if (adminRoles.includes(loggedInUser.role)) {
           toast.error("Please use the Admin portal to sign in.");
           router.push("/login/admin");
-        } else {
+        } else if (loggedInUser.role) {
           toast.error("Please use the Staff portal to sign in.");
           router.push("/login/staff");
         }
@@ -44,6 +47,7 @@ export default function LoginPage() {
       toast.success("Authentication successful");
       router.push("/dashboard/applicant");
     } catch (err: unknown) {
+      console.error("Login error:", err);
       const error = err as Error & { mfaEmail?: string; response?: { data?: { message?: string; errors?: Record<string, string[]>; requires_email_verification?: boolean; email?: string }; status?: number } };
 
       // Handle MFA (unlikely for applicants, but safe)

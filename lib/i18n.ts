@@ -22,12 +22,12 @@ export const localeFlags: Record<Locale, string> = {
  */
 export function getCurrentLocale(): Locale {
   if (typeof window === 'undefined') return 'en';
-  
+
   const stored = localStorage.getItem('locale');
   if (stored && locales.includes(stored as Locale)) {
     return stored as Locale;
   }
-  
+
   return 'en';
 }
 
@@ -46,12 +46,12 @@ export function setCurrentLocale(locale: Locale): void {
 export function t(key: string, locale?: Locale): string {
   const currentLocale = locale || getCurrentLocale();
   const translation = translations[currentLocale]?.[key];
-  
+
   if (!translation) {
     console.warn(`Missing translation for key: ${key} in locale: ${currentLocale}`);
     return translations['en']?.[key] || key;
   }
-  
+
   return translation;
 }
 
@@ -68,17 +68,17 @@ export const translations: Record<Locale, Record<string, string>> = {
     'nav.track_status': 'Track Status',
     'nav.sign_in': 'Sign In',
     'nav.apply_now': 'Apply Now',
-    
+
     // Application Steps
     'step.visa_channel': 'Visa Channel',
-    'step.visa_category': 'Visa Category',
+    'step.visa_type': 'Visa Type',
     'step.applicant_details': 'Applicant Details',
     'step.travel_details': 'Travel Details',
     'step.documents': 'Documents',
     'step.health_declaration': 'Health Declaration',
     'step.security_declaration': 'Security Declaration',
     'step.review_pay': 'Review & Pay',
-    
+
     // Visa Channels
     'channel.evisa': 'E-Visa',
     'channel.evisa_desc': 'Apply online from anywhere in the world. Fastest processing with digital document submission and real-time status tracking.',
@@ -88,7 +88,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'channel.apply_anywhere': 'Apply Anywhere',
     'channel.in_person': 'In-Person Verification',
     'channel.embassy_required': 'Embassy Visit Required',
-    
+
     // Form Labels
     'form.surname': 'Surname',
     'form.first_name': 'First Name',
@@ -113,13 +113,13 @@ export const translations: Record<Locale, Record<string, string>> = {
     'form.intended_arrival': 'Intended Arrival Date',
     'form.duration_days': 'Duration of Stay (Days)',
     'form.purpose_of_visit': 'Purpose of Visit',
-    
+
     // Entry Types
     'entry.single': 'Single Entry',
     'entry.single_desc': 'One-time entry into Ghana',
     'entry.multiple': 'Multiple Entry',
     'entry.multiple_desc': 'Multiple entries during visa validity',
-    
+
     // Processing Tiers
     'tier.standard': 'Standard',
     'tier.standard_desc': '3-5 business days',
@@ -129,7 +129,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'tier.express_desc': 'Same day processing',
     'tier.ultra_express': 'Ultra-Express',
     'tier.ultra_express_desc': 'Within 4 hours',
-    
+
     // Documents
     'doc.passport_bio': 'Passport Bio-data Page',
     'doc.passport_photo': 'Passport Sized Photograph',
@@ -141,7 +141,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'doc.uploaded': 'Uploaded',
     'doc.required': 'Required',
     'doc.optional': 'Optional',
-    
+
     // OCR
     'ocr.extract_data': 'Extract Data from Passport',
     'ocr.extracting': 'Extracting passport data...',
@@ -149,7 +149,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'ocr.verify': 'Please verify all extracted information',
     'ocr.confidence': 'Confidence',
     'ocr.failed': 'Failed to extract data. Please enter manually.',
-    
+
     // Preview
     'preview.title': 'Application Preview',
     'preview.review': 'Review your application before submission',
@@ -160,7 +160,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'preview.travel_info': 'Travel Information',
     'preview.documents': 'Documents',
     'preview.fees': 'Fees',
-    
+
     // Buttons
     'btn.next': 'Next',
     'btn.previous': 'Previous',
@@ -169,14 +169,14 @@ export const translations: Record<Locale, Record<string, string>> = {
     'btn.proceed_payment': 'Proceed to Payment',
     'btn.cancel': 'Cancel',
     'btn.close': 'Close',
-    
+
     // Messages
     'msg.draft_saved': 'Application saved! You can continue anytime from your dashboard.',
     'msg.payment_demo': 'This is for demo purposes only - no actual payment was processed',
     'msg.required_fields': 'Please fill in all required fields',
     'msg.upload_required': 'Please upload all required documents',
   },
-  
+
   fr: {
     // Navigation
     'nav.home': 'Accueil',
@@ -186,17 +186,17 @@ export const translations: Record<Locale, Record<string, string>> = {
     'nav.track_status': 'Suivre le Statut',
     'nav.sign_in': 'Se Connecter',
     'nav.apply_now': 'Postuler Maintenant',
-    
+
     // Application Steps
     'step.visa_channel': 'Canal de Visa',
-    'step.visa_category': 'Catégorie de Visa',
+    'step.visa_type': 'Type de Visa',
     'step.applicant_details': 'Détails du Demandeur',
     'step.travel_details': 'Détails du Voyage',
     'step.documents': 'Documents',
     'step.health_declaration': 'Déclaration de Santé',
     'step.security_declaration': 'Déclaration de Sécurité',
     'step.review_pay': 'Réviser et Payer',
-    
+
     // Visa Channels
     'channel.evisa': 'E-Visa',
     'channel.evisa_desc': 'Postulez en ligne de n\'importe où dans le monde. Traitement le plus rapide avec soumission de documents numériques et suivi en temps réel.',
@@ -206,7 +206,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'channel.apply_anywhere': 'Postuler de Partout',
     'channel.in_person': 'Vérification en Personne',
     'channel.embassy_required': 'Visite à l\'Ambassade Requise',
-    
+
     // Form Labels
     'form.surname': 'Nom de Famille',
     'form.first_name': 'Prénom',
@@ -231,13 +231,13 @@ export const translations: Record<Locale, Record<string, string>> = {
     'form.intended_arrival': 'Date d\'Arrivée Prévue',
     'form.duration_days': 'Durée du Séjour (Jours)',
     'form.purpose_of_visit': 'Objet de la Visite',
-    
+
     // Entry Types
     'entry.single': 'Entrée Simple',
     'entry.single_desc': 'Une seule entrée au Ghana',
     'entry.multiple': 'Entrées Multiples',
     'entry.multiple_desc': 'Entrées multiples pendant la validité du visa',
-    
+
     // Processing Tiers
     'tier.standard': 'Standard',
     'tier.standard_desc': '3-5 jours ouvrables',
@@ -247,7 +247,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'tier.express_desc': 'Traitement le jour même',
     'tier.ultra_express': 'Ultra-Express',
     'tier.ultra_express_desc': 'Dans les 4 heures',
-    
+
     // Documents
     'doc.passport_bio': 'Page Bio-données du Passeport',
     'doc.passport_photo': 'Photo d\'Identité',
@@ -259,7 +259,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'doc.uploaded': 'Téléchargé',
     'doc.required': 'Requis',
     'doc.optional': 'Optionnel',
-    
+
     // OCR
     'ocr.extract_data': 'Extraire les Données du Passeport',
     'ocr.extracting': 'Extraction des données du passeport...',
@@ -267,7 +267,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'ocr.verify': 'Veuillez vérifier toutes les informations extraites',
     'ocr.confidence': 'Confiance',
     'ocr.failed': 'Échec de l\'extraction des données. Veuillez saisir manuellement.',
-    
+
     // Preview
     'preview.title': 'Aperçu de la Demande',
     'preview.review': 'Révisez votre demande avant la soumission',
@@ -278,7 +278,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'preview.travel_info': 'Informations de Voyage',
     'preview.documents': 'Documents',
     'preview.fees': 'Frais',
-    
+
     // Buttons
     'btn.next': 'Suivant',
     'btn.previous': 'Précédent',
@@ -287,7 +287,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     'btn.proceed_payment': 'Procéder au Paiement',
     'btn.cancel': 'Annuler',
     'btn.close': 'Fermer',
-    
+
     // Messages
     'msg.draft_saved': 'Demande sauvegardée! Vous pouvez continuer à tout moment depuis votre tableau de bord.',
     'msg.payment_demo': 'Ceci est à des fins de démonstration uniquement - aucun paiement réel n\'a été traité',

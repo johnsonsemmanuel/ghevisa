@@ -23,6 +23,8 @@ import {
   MessageSquare,
   CheckCircle2,
   XCircle,
+  X,
+  AlertCircle,
   Send,
   FileText,
   User,
@@ -42,6 +44,27 @@ export default function GisCaseDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const id = params.id as string;
+
+  // Helper function to safely format dates
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "—";
+    
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return dateString; // Return original if parsing fails
+      }
+      
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } catch (error) {
+      return dateString; // Return original on error
+    }
+  };
 
   const [escalateOpen, setEscalateOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -320,6 +343,22 @@ export default function GisCaseDetailPage() {
                 <p className="text-xs text-text-muted mb-1">SLA</p>
                 <SlaIndicator hoursLeft={data?.sla_hours_left ?? null} isWithinSla={data?.is_within_sla} />
               </div>
+              <div>
+                <p className="text-xs text-text-muted mb-1">Reviewed By</p>
+                <p className="font-medium text-text-primary text-sm">
+                  {application.reviewing_officer
+                    ? `${application.reviewing_officer.first_name} ${application.reviewing_officer.last_name}`
+                    : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted mb-1">Approved By</p>
+                <p className="font-medium text-text-primary text-sm">
+                  {application.approval_officer
+                    ? `${application.approval_officer.first_name} ${application.approval_officer.last_name}`
+                    : "—"}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -348,7 +387,9 @@ export default function GisCaseDetailPage() {
               </div>
               <div>
                 <p className="text-text-muted mb-0.5">Date of Birth</p>
-                <p className="text-text-primary font-medium">{application.date_of_birth || "—"}</p>
+                <p className="text-text-primary font-medium">
+                  {formatDate(application.date_of_birth)}
+                </p>
               </div>
               <div>
                 <p className="text-text-muted mb-0.5">Marital Status</p>
@@ -368,11 +409,15 @@ export default function GisCaseDetailPage() {
               </div>
               <div>
                 <p className="text-text-muted mb-0.5">Passport Issue Date</p>
-                <p className="text-text-primary font-medium">{application.passport_issue_date || "—"}</p>
+                <p className="text-text-primary font-medium">
+                  {formatDate(application.passport_issue_date)}
+                </p>
               </div>
               <div>
                 <p className="text-text-muted mb-0.5">Passport Expiry Date</p>
-                <p className="text-text-primary font-medium">{application.passport_expiry || "—"}</p>
+                <p className="text-text-primary font-medium">
+                  {formatDate(application.passport_expiry)}
+                </p>
               </div>
               <div>
                 <p className="text-text-muted mb-0.5">Place of Birth</p>
@@ -436,7 +481,7 @@ export default function GisCaseDetailPage() {
               <div>
                 <p className="text-text-muted mb-0.5">Arrival</p>
                 <p className="text-text-primary font-medium">
-                  {application.intended_arrival ? new Date(application.intended_arrival).toLocaleDateString() : "—"}
+                  {formatDate(application.intended_arrival)}
                 </p>
               </div>
               <div>
@@ -454,6 +499,60 @@ export default function GisCaseDetailPage() {
               <div className="sm:col-span-2">
                 <p className="text-text-muted mb-0.5">Purpose</p>
                 <p className="text-text-primary font-medium">{application.purpose_of_visit || "—"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Health & Security Declarations */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield size={18} className="text-text-muted" />
+              <h2 className="text-lg font-semibold text-text-primary">Health & Security Declarations</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-text-muted mb-0.5">High Fever</p>
+                <p className="text-text-primary font-medium">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    application.health_declaration_fever ? "bg-danger/10 text-danger" : "bg-success/10 text-success"
+                  }`}>
+                    {application.health_declaration_fever ? <X size={12} /> : <CheckCircle2 size={12} />}
+                    {application.health_declaration_fever ? "Yes" : "No"}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Coughing / Breathing Difficulties</p>
+                <p className="text-text-primary font-medium">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    application.health_declaration_cough || application.health_declaration_breathing ? "bg-danger/10 text-danger" : "bg-success/10 text-success"
+                  }`}>
+                    {(application.health_declaration_cough || application.health_declaration_breathing) ? <X size={12} /> : <CheckCircle2 size={12} />}
+                    {(application.health_declaration_cough || application.health_declaration_breathing) ? "Yes" : "No"}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Yellow Fever Immunization</p>
+                <p className="text-text-primary font-medium">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    application.health_declaration_yellow_fever ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                  }`}>
+                    {application.health_declaration_yellow_fever ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                    {application.health_declaration_yellow_fever ? "Yes" : "No"}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Criminal Conviction</p>
+                <p className="text-text-primary font-medium">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    application.security_declaration_convicted ? "bg-danger/10 text-danger" : "bg-success/10 text-success"
+                  }`}>
+                    {application.security_declaration_convicted ? <X size={12} /> : <CheckCircle2 size={12} />}
+                    {application.security_declaration_convicted ? "Yes" : "No"}
+                  </span>
+                </p>
               </div>
             </div>
           </div>

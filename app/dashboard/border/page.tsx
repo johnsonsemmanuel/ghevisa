@@ -35,6 +35,36 @@ interface VerificationResult {
   alerts?: Array<{ type: string; message: string }>;
   risk_warnings?: string[];
   previous_entries?: Array<{ port: string; date: string }>;
+  pnr_data?: {
+    pnr_code: string;
+    passenger_name: string;
+    seat_number?: string;
+    booking_class?: string;
+    checked_bags?: number;
+    flight: {
+      flight_number: string;
+      airline: string;
+      departure_airport: string;
+      arrival_airport: string;
+      departure_time: string;
+      arrival_time: string;
+      status: "on_time" | "delayed" | "arrived" | "boarding";
+      passenger_count?: number;
+      gate?: string;
+    };
+    manifest_match: boolean;
+    boarding_status: "not_boarded" | "boarded" | "no_show";
+  };
+  trustnet_data?: {
+    passport_authentic: boolean;
+    mrz_valid: boolean;
+    interpol_clear: boolean;
+    watchlist_clear: boolean;
+    identity_verified: boolean;
+    fraud_indicators: string[];
+    risk_score: number;
+    last_checked: string;
+  };
 }
 
 export default function BorderPortalPage() {
@@ -79,8 +109,9 @@ export default function BorderPortalPage() {
   const handleDecision = async (decision: string, reasonCode: string, notes: string) => {
     if (!verificationResult?.document) return;
     setLoading(true);
+    setError(null);
     try {
-      await api.post("/border/record", {
+      await api.post("/border/crossing", {
         crossing_type: "entry",
         port_of_entry: selectedPort,
         document_type: verificationResult.document.type,
@@ -89,6 +120,8 @@ export default function BorderPortalPage() {
         nationality: verificationResult.document.nationality,
         verification_status: decision === "admit" ? "valid" : decision === "secondary" ? "secondary_inspection" : "invalid",
         verification_notes: `[${reasonCode}] ${notes}`.trim(),
+        flight_number: verificationResult.pnr_data?.flight?.flight_number || null,
+        airline: verificationResult.pnr_data?.flight?.airline || null,
       });
       setDecisionModal({ open: false, type: "admit" });
       setVerificationResult(null);
@@ -97,7 +130,7 @@ export default function BorderPortalPage() {
       setReferenceNumber("");
       queryClient.invalidateQueries({ queryKey: ["border-stats"] });
     } catch {
-      setError("Failed to record entry");
+      setError("Failed to record entry. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -244,8 +277,8 @@ export default function BorderPortalPage() {
 
                   {/* TrustNET & PNR Panels */}
                   <div className="grid md:grid-cols-2 gap-4 mb-6">
-                    <TrustNetPanel compact />
-                    <PnrFlightPanel compact />
+                    <TrustNetPanel data={verificationResult.trustnet_data} compact />
+                    <PnrFlightPanel data={verificationResult.pnr_data} compact />
                   </div>
 
                   {/* Alerts Section */}
@@ -310,19 +343,19 @@ export default function BorderPortalPage() {
             </div>
             <p className="text-xl font-bold mb-2">
               {selectedPort === "KIA" ? "Kotoka Int'l Airport" :
-               selectedPort === "ACC" ? "Tema Port" :
-               selectedPort === "TKD" ? "Takoradi Port" :
-               selectedPort === "AFL" ? "Aflao Border" :
-               selectedPort === "ELB" ? "Elubo Border" : selectedPort}
+                selectedPort === "ACC" ? "Tema Port" :
+                  selectedPort === "TKD" ? "Takoradi Port" :
+                    selectedPort === "AFL" ? "Aflao Border" :
+                      selectedPort === "ELB" ? "Elubo Border" : selectedPort}
             </p>
             <div className="flex items-center gap-2 text-white/70 text-sm">
               <Activity size={14} />
               <span>Online • Active</span>
             </div>
             <div className="mt-4 pt-4 border-t border-white/20">
-              <Button 
-                variant="secondary" 
-                size="sm" 
+              <Button
+                variant="secondary"
+                size="sm"
                 className="w-full !bg-white/20 !text-white hover:!bg-white/30"
                 onClick={() => router.push("/dashboard/border/operations")}
               >

@@ -48,7 +48,7 @@ export interface VisaType {
   platform_fee?: string;
   entry_type?: "single" | "multiple";
   validity_period?: string;
-  category?: "visa" | "eta";
+  type?: "visa" | "eta";
   max_duration_days: number;
   required_documents: string[];
   required_fields?: string[];
@@ -113,10 +113,12 @@ export type ProcessingTier = "express" | "fast_track" | "regular";
 export interface Application {
   id: number;
   reference_number: string;
+  eta_number?: string | null;
   user_id: number;
   visa_type_id: number;
   service_tier_id?: number | null;
   entry_type?: "single" | "multiple" | null;
+  authorization_type?: "eta" | "evisa" | "voa" | "embassy_visa" | null;
   // Decrypted PII fields (returned by API)
   first_name: string;
   last_name: string;
@@ -133,13 +135,24 @@ export interface Application {
   phone: string | null;
   intended_arrival: string | null;
   duration_days: number | null;
+  eta_validity_days?: number | null;
+  entry_type_granted?: string | null;
   visa_duration: number | null;
   port_of_entry: string | null;
+  airline?: string | null;
+  flight_number?: string | null;
   address_in_ghana: string | null;
+  host_name?: string | null;
+  host_phone?: string | null;
+  hotel_booking_reference?: string | null;
   purpose_of_visit: string | null;
   visited_country_1: string | null;
   visited_country_2: string | null;
   visited_country_3: string | null;
+  previous_ghana_visa?: boolean | null;
+  entry_denied_before?: boolean | null;
+  criminal_conviction?: boolean | null;
+  travel_history?: string | null;
   // Health & Security Declarations
   health_declaration_fever: boolean | null;
   health_declaration_cough: boolean | null;
@@ -187,6 +200,8 @@ export interface Application {
   internal_notes?: InternalNote[];
   user?: Pick<User, "id" | "first_name" | "last_name" | "email">;
   assigned_officer?: Pick<User, "id" | "first_name" | "last_name"> | null;
+  reviewing_officer?: Pick<User, "id" | "first_name" | "last_name" | "email"> | null;
+  approval_officer?: Pick<User, "id" | "first_name" | "last_name" | "email"> | null;
 }
 
 /* ── Documents ───────────────────────────────── */

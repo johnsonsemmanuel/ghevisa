@@ -99,9 +99,22 @@ function PaymentCallbackContent() {
       if (res.data.success && res.data.status === "completed") {
         setStatus("success");
         setMessage("Payment completed successfully! Your application has been submitted.");
+        if (res.data.application_id) {
+          setTimeout(() => {
+            router.push(`/dashboard/applicant/applications/${res.data.application_id}`);
+          }, 3000);
+        }
       } else if (res.data.status === "pending") {
-        setStatus("success");
-        setMessage("Payment is being processed. You will be notified once confirmed.");
+        if (retryCount < 10) {
+          setStatus("loading");
+          setMessage(`Payment is being processed. Please wait... (${retryCount + 1}/10)`);
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => verifyLegacyPayment(), 5000);
+        } else {
+          setStatus("success");
+          setMessage("Payment is being processed. You will be notified once confirmed.");
+        }
+        return;
       } else {
         setStatus("failed");
         setMessage(res.data.message || "Payment verification failed. Please contact support.");
@@ -109,8 +122,14 @@ function PaymentCallbackContent() {
     } catch (err: any) {
       console.error("Payment verification error:", err.response?.status, err.response?.data || err.message);
       
-      // Handle 401 Unauthorized - user session may have expired
-      if (err.response?.status === 401) {
+      // Retry on 401/network errors - token may just need a moment after redirect
+      if ((err.response?.status === 401 || !err.response) && retryCount < 5) {
+        setStatus("loading");
+        setMessage("Verifying payment, please wait...");
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => verifyLegacyPayment(), 3000);
+        return;
+      } else if (err.response?.status === 401) {
         setStatus("failed");
         setMessage("Session expired. Please login again and check your dashboard for payment status.");
       } else {

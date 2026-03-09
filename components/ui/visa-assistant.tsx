@@ -183,7 +183,7 @@ export function VisaAssistant({ open, onClose, onSelectVisa, visaTypes }: VisaAs
           {step === 0 && (
             <div>
               <h3 className="font-semibold text-text-primary mb-2">What is your nationality?</h3>
-              <p className="text-sm text-text-secondary mb-4">This determines which visa categories you are eligible for.</p>
+              <p className="text-sm text-text-secondary mb-4">This determines which visa types you are eligible for.</p>
               <select
                 value={answers.nationality}
                 onChange={(e) => setAnswer("nationality", e.target.value)}
@@ -254,7 +254,7 @@ export function VisaAssistant({ open, onClose, onSelectVisa, visaTypes }: VisaAs
           {step === 2 && (
             <div>
               <h3 className="font-semibold text-text-primary mb-2">How long do you plan to stay in Ghana?</h3>
-              <p className="text-sm text-text-secondary mb-4">This helps us determine the right visa category and validity period.</p>
+              <p className="text-sm text-text-secondary mb-4">This helps us determine the right visa type and validity period.</p>
               <div className="grid sm:grid-cols-2 gap-3">
                 {DURATION_OPTIONS.map((opt) => (
                   <button
@@ -278,7 +278,7 @@ export function VisaAssistant({ open, onClose, onSelectVisa, visaTypes }: VisaAs
               <p className="text-sm text-text-secondary mb-4">Based on your answers, here are our top recommendations:</p>
               {recommendations.length === 0 && (
                 <p className="text-sm text-text-muted py-8 text-center">
-                  No matching visa types found. Please try different options or browse all visa categories.
+                  No matching visa types found. Please try different options or browse all visa types.
                 </p>
               )}
               <div className="space-y-4">

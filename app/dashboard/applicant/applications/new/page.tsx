@@ -396,6 +396,19 @@ function NewApplicationPageInner() {
     return () => clearTimeout(timer);
   }, [form, currentStep, application]);
 
+  // Clear visited countries when Ghana is selected
+  useEffect(() => {
+    if (form.visited_ghana_before === 'yes') {
+      setForm(prev => ({
+        ...prev,
+        visited_country_1: '',
+        visited_country_2: '',
+        visited_country_3: '',
+        visited_other_countries: 'no'
+      }));
+    }
+  }, [form.visited_ghana_before]);
+
   const handleVisaSelect = (id: string) => {
     set("visa_type_id", id);
     const std = serviceTiers.find((t) => t.code === "standard");
@@ -407,6 +420,10 @@ function NewApplicationPageInner() {
   const handleEntryTypeConfirm = () => { setShowEntryTypeModal(false); setShowSpeedModal(true); };
 
   const minArrival = useMemo(() => { const d = new Date(); d.setDate(d.getDate() + 3); return d.toISOString().split("T")[0]; }, []);
+
+  const maxDOB = useMemo(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().split("T")[0]; }, []);
+  const maxPassportIssue = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const minPassportExpiry = useMemo(() => { const d = new Date(); d.setMonth(d.getMonth() + 6); return d.toISOString().split("T")[0]; }, []);
 
   const reqDocs = useMemo(() => {
     if (visaConfig) return visaConfig.requiredDocuments;
@@ -582,18 +599,18 @@ function NewApplicationPageInner() {
         if (f.conditionalOn) { const dv = form[f.conditionalOn.field]; const show = Array.isArray(f.conditionalOn.value) ? f.conditionalOn.value.includes(dv) : dv === f.conditionalOn.value; if (!show) continue; }
         if (!form[f.key]?.trim()) e[f.key] = `${f.label} is required`;
       }
-    } else if (step === 2) {
+    } else if (step === 3) {
       if (!form.intended_arrival) e.intended_arrival = "Required";
       if (!form.duration_days) e.duration_days = "Required";
       if (!form.port_of_entry) e.port_of_entry = "Required";
       if (!form.address_in_ghana?.trim()) e.address_in_ghana = "Required";
       if (!form.purpose_of_visit?.trim()) e.purpose_of_visit = "Required";
     }
-    if (step === 3) {
+    if (step === 6) {
       const miss = reqDocs.filter((d) => d.required && !documents[d.key]);
       if (miss.length) { toast.error(`Upload required: ${miss.map((d) => d.label).join(", ")}`); return false; }
     }
-    if (step === 4) {
+    if (step === 7) {
       // Health Declaration validation
       if (!form.health_good_condition) e.health_good_condition = "Required";
       if (!form.health_recent_illness) e.health_recent_illness = "Required";
@@ -601,7 +618,7 @@ function NewApplicationPageInner() {
       if (!form.health_yellow_fever_vaccinated) e.health_yellow_fever_vaccinated = "Required";
       if (!form.health_chronic_conditions) e.health_chronic_conditions = "Required";
     }
-    if (step === 5) {
+    if (step === 8) {
       // Security Declaration validation
       if (declQuestions.length > 0) {
         for (const q of declQuestions) { if (!form[q.key]) e[q.key] = "Required"; }
@@ -700,7 +717,7 @@ function NewApplicationPageInner() {
             <p className="text-sm text-text-secondary mb-6">Select the option that best describes your visit.</p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {visaTypes.filter((vt) => vt.category !== "eta").map((vt) => (
+              {visaTypes.filter((vt) => vt.type !== "eta").map((vt) => (
                 <button key={vt.id} type="button" onClick={() => {
                   set("visa_type_id", vt.id.toString());
                   set("visa_channel", "e-visa");
@@ -926,8 +943,49 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 2: Travel Details (visa-specific merged) ── */}
+        {/* ── STEP 2: Applicant Details ── */}
         {currentStep === 2 && (
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary mb-1">Applicant Details</h2>
+            <p className="text-sm text-text-secondary mb-6">Provide your personal information as it appears on your travel documents.</p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Input label="First Name *" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} error={errors.first_name} required />
+              <Input label="Last Name *" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} error={errors.last_name} required />
+              <Input label="Date of Birth *" type="date" value={form.date_of_birth} onChange={(e) => set("date_of_birth", e.target.value)} error={errors.date_of_birth} max={maxDOB} required />
+              <Select label="Gender *" value={form.gender || ""} onChange={(e) => set("gender", e.target.value)} error={errors.gender} required>
+                <option value="">-- Select --</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </Select>
+              <Input label="Passport Number *" value={form.passport_number} onChange={(e) => set("passport_number", e.target.value.toUpperCase())} error={errors.passport_number} placeholder="e.g. A12345678" required />
+              <Select label="Nationality *" value={form.nationality || ""} onChange={(e) => set("nationality", e.target.value)} error={errors.nationality} required>
+                <option value="">-- Select --</option>
+                {countries.map((c) => <option key={c.code} value={c.code}>{c.nationality}</option>)}
+              </Select>
+              <Input label="Email Address *" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} error={errors.email} required />
+              <Input label="Phone Number" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} error={errors.phone} placeholder="+233XXXXXXXXX" />
+              <Select label="Marital Status" value={form.marital_status || ""} onChange={(e) => set("marital_status", e.target.value)} error={errors.marital_status}>
+                <option value="">-- Select --</option>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
+                <option value="separated">Separated</option>
+              </Select>
+              <Input label="Profession/Occupation" value={form.profession} onChange={(e) => set("profession", e.target.value)} error={errors.profession} placeholder="e.g. Software Engineer" />
+              <Select label="Country of Birth" value={form.country_of_birth || ""} onChange={(e) => set("country_of_birth", e.target.value)} error={errors.country_of_birth}>
+                <option value="">-- Select --</option>
+                {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </Select>
+              <Input label="Place of Birth" value={form.place_of_birth} onChange={(e) => set("place_of_birth", e.target.value)} error={errors.place_of_birth} placeholder="City, Country" />
+              <Input label="Passport Issue Date" type="date" value={form.passport_issue_date} onChange={(e) => set("passport_issue_date", e.target.value)} error={errors.passport_issue_date} max={maxPassportIssue} />
+              <Input label="Passport Expiry Date" type="date" value={form.passport_expiry} onChange={(e) => set("passport_expiry", e.target.value)} error={errors.passport_expiry} min={minPassportExpiry} />
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: Travel Details (visa-specific merged) ── */}
+        {currentStep === 3 && (
           <div>
             <h2 className="text-lg font-semibold text-text-primary mb-1">{visaConfig?.stepTitle || "Travel Details"}</h2>
             <p className="text-sm text-text-secondary mb-6">{visaConfig?.stepDescription || "Provide your travel and stay information."}</p>
@@ -938,6 +996,12 @@ function NewApplicationPageInner() {
                   if (field.conditionalOn) {
                     const depVal = form[field.conditionalOn.field];
                     const show = Array.isArray(field.conditionalOn.value) ? field.conditionalOn.value.includes(depVal) : depVal === field.conditionalOn.value;
+
+                    // Special logic: If they've visited Ghana before, don't ask about other African countries
+                    if (field.key.startsWith('visited_country_') && form.visited_ghana_before === 'yes') {
+                      return null;
+                    }
+
                     if (!show) return null;
                   }
                   return <DynField key={field.key} field={field} value={form[field.key] || ""} onChange={(v) => set(field.key, v)} error={errors[field.key]} />;
@@ -960,32 +1024,34 @@ function NewApplicationPageInner() {
             </div>
 
             {/* Visited Countries Section */}
-            <div className="mt-8">
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border-light">
-                <Globe size={16} className="text-primary" />
-                <h3 className="text-sm font-bold text-text-primary">Countries Visited (Optional)</h3>
+            {form.visited_ghana_before !== 'yes' && (
+              <div className="mt-8">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border-light">
+                  <Globe size={16} className="text-primary" />
+                  <h3 className="text-sm font-bold text-text-primary">Countries Visited (Optional)</h3>
+                </div>
+                <p className="text-xs text-text-muted mb-4">List up to 3 countries you have visited in the past 5 years</p>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <Select label="Country 1" value={form.visited_country_1} onChange={(e) => set("visited_country_1", e.target.value)}>
+                    <option value="">-- Select Country --</option>
+                    {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+                  </Select>
+                  <Select label="Country 2" value={form.visited_country_2} onChange={(e) => set("visited_country_2", e.target.value)}>
+                    <option value="">-- Select Country --</option>
+                    {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+                  </Select>
+                  <Select label="Country 3" value={form.visited_country_3} onChange={(e) => set("visited_country_3", e.target.value)}>
+                    <option value="">-- Select Country --</option>
+                    {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+                  </Select>
+                </div>
               </div>
-              <p className="text-xs text-text-muted mb-4">List up to 3 countries you have visited in the past 5 years</p>
-              <div className="grid sm:grid-cols-3 gap-4">
-                <Select label="Country 1" value={form.visited_country_1} onChange={(e) => set("visited_country_1", e.target.value)}>
-                  <option value="">-- Select Country --</option>
-                  {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                </Select>
-                <Select label="Country 2" value={form.visited_country_2} onChange={(e) => set("visited_country_2", e.target.value)}>
-                  <option value="">-- Select Country --</option>
-                  {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                </Select>
-                <Select label="Country 3" value={form.visited_country_3} onChange={(e) => set("visited_country_3", e.target.value)}>
-                  <option value="">-- Select Country --</option>
-                  {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                </Select>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
-        {/* ── STEP 3: Document Upload ── */}
-        {currentStep === 3 && (
+        {/* ── STEP 4: Document Upload ── */}
+        {currentStep === 4 && (
           <div>
             <h2 className="text-lg font-semibold text-text-primary mb-1">Document Upload</h2>
             <p className="text-sm text-text-secondary mb-2">Upload the required documents to support your application.</p>
@@ -1048,8 +1114,8 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 4: Health Declaration ── */}
-        {currentStep === 4 && (
+        {/* ── STEP 5: Health Declaration ── */}
+        {currentStep === 5 && (
           <div>
             <div className="flex items-center gap-3 mb-1">
               <ShieldCheck size={22} className="text-success" />
@@ -1182,8 +1248,8 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 5: Security & Travel Declaration ── */}
-        {currentStep === 5 && (
+        {/* ── STEP 6: Security & Travel Declaration ── */}
+        {currentStep === 6 && (
           <div>
             <div className="flex items-center gap-3 mb-1">
               <ShieldCheck size={22} className="text-primary" />
@@ -1236,8 +1302,8 @@ function NewApplicationPageInner() {
           </div>
         )}
 
-        {/* ── STEP 6: Review & Payment ── */}
-        {currentStep === 6 && (
+        {/* ── STEP 7: Review & Payment ── */}
+        {currentStep === 7 && (
           <div>
             <h2 className="text-lg font-semibold text-text-primary mb-1">Review Your Application</h2>
             <p className="text-sm text-text-secondary mb-6">Please confirm all details before proceeding to payment.</p>
