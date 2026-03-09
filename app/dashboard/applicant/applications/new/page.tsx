@@ -646,8 +646,8 @@ function NewApplicationPageInner() {
         </div>
       </div>
 
-      {/* Dynamic Pricing Display - Shows on steps 1-6 after visa selection */}
-      {currentStep >= 1 && fees.total > 0 && (
+      {/* Dynamic Pricing Display - Shows ONLY on payment step (step 6) */}
+      {currentStep === 6 && fees.total > 0 && (
         <div className="bg-gradient-to-r from-accent/5 to-primary/5 rounded-2xl border border-accent/20 p-5 mb-6 shadow-sm">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -710,22 +710,21 @@ function NewApplicationPageInner() {
                   <p className="text-sm text-text-secondary mb-3 line-clamp-2">{vt.description}</p>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-text-muted">{vt.validity_period || `Up to ${vt.max_duration_days} days`}</span>
-                    <span className="font-bold text-accent">From $260</span>
                   </div>
                 </button>
               ))}
               {visaTypes.length === 0 && <p className="text-text-muted text-sm col-span-3 text-center py-8">Loading visa types...</p>}
             </div>
 
-            {/* Pricing Summary - Shows when visa type is selected */}
-            {selVT && (
+            {/* Pricing Summary - Hidden during application process */}
+            {selVT && false && (
               <div className="p-4 rounded-xl bg-accent/5 border border-accent/20 mb-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-text-muted uppercase tracking-wider font-medium">Base Fee</p>
                       <p className="text-lg font-bold text-text-primary">$260.00</p>
-                      <p className="text-xs text-text-muted mt-0.5">{selVT.name}</p>
+                      <p className="text-xs text-text-muted mt-0.5">{selVT?.name}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-text-muted uppercase tracking-wider font-medium">Entry Fee</p>
