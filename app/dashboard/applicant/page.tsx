@@ -32,11 +32,11 @@ export default function ApplicantDashboard() {
   const apps = data?.data || [];
   const draft = apps.filter((a) => a.status === "draft").length;
   const pending = apps.filter((a) =>
-    ["submitted_awaiting_payment", "pending_payment", "paid_submitted", "submitted", "under_review", "pending_approval", "escalated"].includes(a.status)
+    ["submitted_awaiting_payment", "pending_payment", "paid_submitted", "submitted", "under_review", "pending_approval", "escalated", "appealed"].includes(a.status)
   ).length;
   const approved = apps.filter((a) => ["approved", "issued"].includes(a.status)).length;
   const needsAction = apps.filter((a) =>
-    ["additional_info_requested", "submitted_awaiting_payment", "pending_payment"].includes(a.status)
+    ["additional_info_requested", "submitted_awaiting_payment", "pending_payment", "denied", "revoked", "expired"].includes(a.status)
   ).length;
 
   // Check if popup should be shown (only once per session)

@@ -41,9 +41,19 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
+        // Avoid redirect loop if already on a login page
+        const isLoginPage = window.location.pathname.startsWith("/login");
+        if (!isLoginPage) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          // Use a brief timeout so the toast renders before redirect
+          import("react-hot-toast").then(({ default: toast }) => {
+            toast.error("Session expired. Please sign in again.", { duration: 3000 });
+          });
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 300);
+        }
       }
     }
     return Promise.reject(error);

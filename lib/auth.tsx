@@ -9,6 +9,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  verifyMfa: (email: string, otp: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -58,6 +59,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     await fetchCsrfCookie();
     const res = await api.post("/auth/login", { email, password });
+
+    // If MFA is required, throw a structured error the UI can handle
+    if (res.data.requires_mfa) {
+      const err = new Error("MFA_REQUIRED") as Error & { mfaEmail: string };
+      err.mfaEmail = res.data.email;
+      throw err;
+    }
+
+    const { user: u, token: t } = res.data;
+    setUser(u);
+    setToken(t);
+    localStorage.setItem("token", t);
+    localStorage.setItem("user", JSON.stringify(u));
+  }, []);
+
+  const verifyMfa = useCallback(async (email: string, otp: string) => {
+    await fetchCsrfCookie();
+    const res = await api.post("/auth/verify-mfa", { email, token: otp });
     const { user: u, token: t } = res.data;
     setUser(u);
     setToken(t);
@@ -92,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         loading,
         login,
+        verifyMfa,
         register,
         logout,
         isAuthenticated: !!token,

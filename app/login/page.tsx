@@ -44,13 +44,22 @@ export default function LoginPage() {
       toast.success("Authentication successful");
       router.push("/dashboard/applicant");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]>; requires_email_verification?: boolean; email?: string } } };
-      if (error.response?.data?.requires_email_verification) {
-        // Handle email verification requirement
+      const error = err as Error & { mfaEmail?: string; response?: { data?: { message?: string; errors?: Record<string, string[]>; requires_email_verification?: boolean; email?: string }; status?: number } };
+
+      // Handle MFA (unlikely for applicants, but safe)
+      if (error.message === "MFA_REQUIRED") {
+        toast.error("This account requires staff login. Please use the Staff Portal.");
+        router.push("/login/staff");
+        return;
+      }
+
+      // Handle account lockout (429)
+      if (error.response?.status === 429) {
+        toast.error(error.response?.data?.message || "Too many login attempts. Please try again later.", { duration: 6000 });
+      } else if (error.response?.data?.requires_email_verification) {
         toast.error(error.response.data.message || "Email verification required");
-        // Optionally redirect to verification page or show verification message
         if (error.response.data.email) {
-          console.log(`Verification email sent to: ${error.response.data.email}`);
+          router.push(`/verify-email?email=${encodeURIComponent(error.response.data.email)}`);
         }
       } else if (error.response?.data?.errors) {
         const fieldErrors: Record<string, string> = {};
@@ -156,20 +165,22 @@ export default function LoginPage() {
 
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex justify-end mb-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setEmail("fatima@example.com");
-                  setPassword("password");
-                }}
-                className="text-xs"
-              >
-                Demo: Applicant
-              </Button>
-            </div>
+            {process.env.NODE_ENV !== "production" && (
+              <div className="flex justify-end mb-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setEmail("fatima@example.com");
+                    setPassword("password");
+                  }}
+                  className="text-xs"
+                >
+                  Demo: Applicant
+                </Button>
+              </div>
+            )}
             <Input
               label="Email Address"
               type="email"

@@ -10,12 +10,39 @@ import { ArrowLeft, Shield, Settings, Lock, User, Briefcase } from "lucide-react
 import toast from "react-hot-toast";
 
 export default function AdminLoginPage() {
-  const { login } = useAuth();
+  const { login, verifyMfa } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaEmail, setMfaEmail] = useState("");
+  const [otp, setOtp] = useState("");
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await verifyMfa(mfaEmail, otp);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user.role !== "SYSTEM_ADMIN") {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        toast.error("Access denied. This portal is for administrators only.");
+        setMfaStep(false);
+        return;
+      }
+      toast.success("Authentication successful");
+      router.push("/dashboard/admin");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || "Invalid or expired OTP.");
+      setOtp("");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +63,19 @@ export default function AdminLoginPage() {
       toast.success("Authentication successful");
       router.push("/dashboard/admin");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
-      if (error.response?.data?.errors) {
+      const error = err as Error & { mfaEmail?: string; response?: { data?: { message?: string; errors?: Record<string, string[]> }; status?: number } };
+
+      if (error.message === "MFA_REQUIRED" && error.mfaEmail) {
+        setMfaEmail(error.mfaEmail);
+        setMfaStep(true);
+        toast.success("MFA code sent to your email.", { duration: 5000 });
+        setLoading(false);
+        return;
+      }
+
+      if (error.response?.status === 429) {
+        toast.error(error.response?.data?.message || "Account temporarily locked.", { duration: 6000 });
+      } else if (error.response?.data?.errors) {
         const fieldErrors: Record<string, string> = {};
         for (const [key, msgs] of Object.entries(error.response.data.errors)) {
           fieldErrors[key] = msgs[0];
@@ -129,65 +167,60 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold text-text-primary mb-1">
-            Admin Sign In
-          </h1>
-          <p className="text-text-secondary mb-8">
-            Enter administrator credentials
-          </p>
+          {mfaStep ? (
+            <>
+              <h1 className="text-2xl font-bold text-text-primary mb-1">Verify Identity</h1>
+              <p className="text-text-secondary mb-2">A 6-digit verification code has been sent to</p>
+              <p className="text-sm font-medium text-purple-700 bg-purple-50 rounded-lg px-3 py-2 mb-6">{mfaEmail}</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex justify-end mb-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setEmail("admin@ghevisa.gov.gh");
-                  setPassword("password");
-                }}
-                className="text-xs"
-              >
-                Demo: System Admin
-              </Button>
-            </div>
-            <Input
-              label="Admin Email"
-              type="email"
-              placeholder="admin@ghevisa.gov.gh"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={errors.email}
-              required
-            />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={errors.password}
-              required
-            />
-            <Button
-              type="submit"
-              loading={loading}
-              className="w-full !bg-purple-600 hover:!bg-purple-700"
-              size="lg"
-            >
-              Sign In to Admin Portal
-            </Button>
-          </form>
+              <form onSubmit={handleMfaVerify} className="space-y-5">
+                <Input
+                  label="Verification Code"
+                  type="text"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  required
+                  autoFocus
+                />
+                <p className="text-xs text-text-muted">Enter the 6-digit code from your email. The code expires in 10 minutes.</p>
+                <Button type="submit" loading={loading} disabled={otp.length !== 6} className="w-full !bg-purple-600 hover:!bg-purple-700" size="lg">
+                  Verify &amp; Sign In
+                </Button>
+              </form>
+              <button onClick={() => { setMfaStep(false); setOtp(""); }} className="text-sm text-purple-600 hover:underline mt-4 block text-center w-full">
+                \u2190 Back to login
+              </button>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-text-primary mb-1">Admin Sign In</h1>
+              <p className="text-text-secondary mb-8">Enter administrator credentials</p>
 
-          <p className="text-sm text-text-secondary text-center mt-6">
-            Staff member?{" "}
-            <Link
-              href="/login/staff"
-              className="text-purple-600 font-medium hover:underline"
-            >
-              Staff portal
-            </Link>
-          </p>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {process.env.NODE_ENV !== "production" && (
+                  <div className="flex justify-end mb-2">
+                    <Button type="button" variant="secondary" size="sm"
+                      onClick={() => { setEmail("admin@ghevisa.gov.gh"); setPassword("password"); }} className="text-xs">
+                      Demo: System Admin
+                    </Button>
+                  </div>
+                )}
+                <Input label="Admin Email" type="email" placeholder="admin@ghevisa.gov.gh"
+                  value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} required />
+                <Input label="Password" type="password" placeholder="Enter your password"
+                  value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} required />
+                <Button type="submit" loading={loading} className="w-full !bg-purple-600 hover:!bg-purple-700" size="lg">
+                  Sign In to Admin Portal
+                </Button>
+              </form>
+
+              <p className="text-sm text-text-secondary text-center mt-6">
+                Staff member?{" "}
+                <Link href="/login/staff" className="text-purple-600 font-medium hover:underline">Staff portal</Link>
+              </p>
+            </>
+          )}
 
           <div className="mt-8 pt-6 border-t border-border">
             <p className="text-xs text-text-muted text-center mb-3">Other portals</p>

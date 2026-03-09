@@ -66,8 +66,9 @@ export default function TrackPage() {
         setDevOtp(data.dev_otp || null);
         setStep("otp");
       }
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr.response?.status === 404) {
         setError("No application found with this reference number. Please check and try again.");
       } else {
         setError("Something went wrong. Please try again later.");
@@ -92,8 +93,9 @@ export default function TrackPage() {
       });
       setSearchResult(res.data);
       setStep("result");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Verification failed. Please try again.");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr.response?.data?.message || "Verification failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -113,8 +115,14 @@ export default function TrackPage() {
     approved: { bg: "bg-green-50 border-green-100", text: "text-green-700", icon: <CheckCircle size={16} className="text-green-600" /> },
     issued: { bg: "bg-green-50 border-green-100", text: "text-green-700", icon: <CheckCircle size={16} className="text-green-600" /> },
     denied: { bg: "bg-red-50 border-red-100", text: "text-red-700", icon: <AlertTriangle size={16} className="text-red-600" /> },
+    revoked: { bg: "bg-red-50 border-red-100", text: "text-red-700", icon: <AlertTriangle size={16} className="text-red-600" /> },
+    expired: { bg: "bg-gray-50 border-gray-200", text: "text-gray-600", icon: <Clock size={16} className="text-gray-500" /> },
+    appealed: { bg: "bg-amber-50 border-amber-100", text: "text-amber-700", icon: <Clock size={16} className="text-amber-600" /> },
+    cancelled: { bg: "bg-gray-50 border-gray-200", text: "text-gray-600", icon: <Clock size={16} className="text-gray-500" /> },
     under_review: { bg: "bg-amber-50 border-amber-100", text: "text-amber-700", icon: <Clock size={16} className="text-amber-600" /> },
     pending_approval: { bg: "bg-blue-50 border-blue-100", text: "text-blue-700", icon: <Clock size={16} className="text-blue-600" /> },
+    additional_info_requested: { bg: "bg-amber-50 border-amber-100", text: "text-amber-700", icon: <AlertTriangle size={16} className="text-amber-600" /> },
+    escalated: { bg: "bg-amber-50 border-amber-100", text: "text-amber-700", icon: <AlertTriangle size={16} className="text-amber-600" /> },
     submitted: { bg: "bg-amber-50 border-amber-100", text: "text-amber-700", icon: <Clock size={16} className="text-amber-600" /> },
   };
 

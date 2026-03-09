@@ -102,6 +102,9 @@ export type ApplicationStatus =
   | "approved"
   | "denied"
   | "issued"
+  | "revoked"
+  | "expired"
+  | "appealed"
   | "cancelled";
 
 export type Tier = "tier_1" | "tier_2";

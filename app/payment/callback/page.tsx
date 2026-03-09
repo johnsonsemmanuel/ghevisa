@@ -68,7 +68,7 @@ function PaymentCallbackContent() {
 
   const verifyLegacyPayment = async () => {
     try {
-      const res = await api.post("/applicant/payment/verify", {
+      const res = await api.post("/payment/verify", {
         reference: reference,
       });
 

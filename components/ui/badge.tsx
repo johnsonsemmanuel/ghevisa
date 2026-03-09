@@ -28,6 +28,9 @@ const statusMap: Record<ApplicationStatus, { label: string; variant: BadgeVarian
   approved: { label: "Approved", variant: "success" },
   denied: { label: "Denied", variant: "danger" },
   issued: { label: "Visa Issued", variant: "success" },
+  revoked: { label: "Revoked", variant: "danger" },
+  expired: { label: "Expired", variant: "neutral" },
+  appealed: { label: "Appealed", variant: "warning" },
   cancelled: { label: "Cancelled", variant: "neutral" },
 };
 

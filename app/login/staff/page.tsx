@@ -27,12 +27,32 @@ const roleRedirect: Record<string, string> = {
 
 
 export default function StaffLoginPage() {
-  const { login } = useAuth();
+  const { login, verifyMfa } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaEmail, setMfaEmail] = useState("");
+  const [otp, setOtp] = useState("");
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await verifyMfa(mfaEmail, otp);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      toast.success("Authentication successful");
+      router.push(roleRedirect[user.role] || "/dashboard/gis");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || "Invalid or expired OTP. Please try again.");
+      setOtp("");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +78,21 @@ export default function StaffLoginPage() {
       toast.success("Authentication successful");
       router.push(roleRedirect[user.role] || "/dashboard/gis");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
-      if (error.response?.data?.errors) {
+      const error = err as Error & { mfaEmail?: string; response?: { data?: { message?: string; errors?: Record<string, string[]> }; status?: number } };
+
+      // Handle MFA requirement
+      if (error.message === "MFA_REQUIRED" && error.mfaEmail) {
+        setMfaEmail(error.mfaEmail);
+        setMfaStep(true);
+        toast.success("MFA code sent to your email. Please check your inbox.", { duration: 5000 });
+        setLoading(false);
+        return;
+      }
+
+      // Handle account lockout (429)
+      if (error.response?.status === 429) {
+        toast.error(error.response?.data?.message || "Account temporarily locked. Please try again later.", { duration: 6000 });
+      } else if (error.response?.data?.errors) {
         const fieldErrors: Record<string, string> = {};
         for (const [key, msgs] of Object.entries(error.response.data.errors)) {
           fieldErrors[key] = msgs[0];
@@ -151,102 +184,118 @@ export default function StaffLoginPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold text-text-primary mb-1">
-            Staff Sign In
-          </h1>
-          <p className="text-text-secondary mb-8">
-            Enter your staff credentials to access the portal
-          </p>
+          {mfaStep ? (
+            <>
+              <h1 className="text-2xl font-bold text-text-primary mb-1">
+                Verify Identity
+              </h1>
+              <p className="text-text-secondary mb-2">
+                A 6-digit verification code has been sent to
+              </p>
+              <p className="text-sm font-medium text-teal-700 bg-teal-50 rounded-lg px-3 py-2 mb-6">
+                {mfaEmail}
+              </p>
 
+              <form onSubmit={handleMfaVerify} className="space-y-5">
+                <Input
+                  label="Verification Code"
+                  type="text"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  required
+                  autoFocus
+                />
+                <p className="text-xs text-text-muted">
+                  Enter the 6-digit code from your email. The code expires in 10 minutes.
+                </p>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  disabled={otp.length !== 6}
+                  className="w-full !bg-teal-600 hover:!bg-teal-700"
+                  size="lg"
+                >
+                  Verify &amp; Sign In
+                </Button>
+              </form>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex flex-wrap gap-2 justify-end mb-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setEmail("kmensah@gis.gov.gh");
-                  setPassword("password");
-                }}
-                className="text-xs"
+              <button
+                onClick={() => { setMfaStep(false); setOtp(""); }}
+                className="text-sm text-teal-600 hover:underline mt-4 block text-center w-full"
               >
-                Demo: GIS Reviewer
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setEmail("gis.approver@gis.gov.gh");
-                  setPassword("password");
-                }}
-                className="text-xs"
-              >
-                Demo: GIS Approver
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setEmail("gis.admin@gis.gov.gh");
-                  setPassword("password");
-                }}
-                className="text-xs"
-              >
-                Demo: GIS Admin
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setEmail("aadjei@mfa.gov.gh");
-                  setPassword("password");
-                }}
-                className="text-xs"
-              >
-                Demo: MFA
-              </Button>
-            </div>
-            <Input
-              label="Staff Email"
-              type="email"
-              placeholder="officer@gis.gov.gh"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={errors.email}
-              required
-            />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={errors.password}
-              required
-            />
-            <Button
-              type="submit"
-              loading={loading}
-              className="w-full !bg-teal-600 hover:!bg-teal-700"
-              size="lg"
-            >
-              Sign In to Staff Portal
-            </Button>
-          </form>
+                ← Back to login
+              </button>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-text-primary mb-1">
+                Staff Sign In
+              </h1>
+              <p className="text-text-secondary mb-8">
+                Enter your staff credentials to access the portal
+              </p>
 
-          <p className="text-sm text-text-secondary text-center mt-6">
-            Applicant?{" "}
-            <Link
-              href="/login"
-              className="text-teal-600 font-medium hover:underline"
-            >
-              Sign in here
-            </Link>
-          </p>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {process.env.NODE_ENV !== "production" && (
+                  <div className="flex flex-wrap gap-2 justify-end mb-2">
+                    <Button type="button" variant="secondary" size="sm"
+                      onClick={() => { setEmail("kmensah@gis.gov.gh"); setPassword("password"); }} className="text-xs">
+                      Demo: GIS Reviewer
+                    </Button>
+                    <Button type="button" variant="secondary" size="sm"
+                      onClick={() => { setEmail("gis.approver@gis.gov.gh"); setPassword("password"); }} className="text-xs">
+                      Demo: GIS Approver
+                    </Button>
+                    <Button type="button" variant="secondary" size="sm"
+                      onClick={() => { setEmail("gis.admin@gis.gov.gh"); setPassword("password"); }} className="text-xs">
+                      Demo: GIS Admin
+                    </Button>
+                    <Button type="button" variant="secondary" size="sm"
+                      onClick={() => { setEmail("aadjei@mfa.gov.gh"); setPassword("password"); }} className="text-xs">
+                      Demo: MFA
+                    </Button>
+                  </div>
+                )}
+                <Input
+                  label="Staff Email"
+                  type="email"
+                  placeholder="officer@gis.gov.gh"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  error={errors.email}
+                  required
+                />
+                <Input
+                  label="Password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  error={errors.password}
+                  required
+                />
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="w-full !bg-teal-600 hover:!bg-teal-700"
+                  size="lg"
+                >
+                  Sign In to Staff Portal
+                </Button>
+              </form>
+
+              <p className="text-sm text-text-secondary text-center mt-6">
+                Applicant?{" "}
+                <Link
+                  href="/login"
+                  className="text-teal-600 font-medium hover:underline"
+                >
+                  Sign in here
+                </Link>
+              </p>
+            </>
+          )}
 
           <div className="mt-8 pt-6 border-t border-border">
             <p className="text-xs text-text-muted text-center mb-3">Other portals</p>
