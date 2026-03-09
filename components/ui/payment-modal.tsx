@@ -50,9 +50,23 @@ export function PaymentModal({
   applicantName,
   referenceNumber,
 }: PaymentModalProps) {
-  const [selectedMethod, setSelectedMethod] = useState("card");
+  const [selectedMethod, setSelectedMethod] = useState("paystack_card");
   const [processing, setProcessing] = useState(false);
   const [agreed, setAgreed] = useState(false);
+
+  // Determine currency based on payment method
+  const getCurrency = () => {
+    if (selectedMethod.startsWith('paystack_')) return 'GHS';
+    return 'USD';
+  };
+
+  // Convert amount for display (USD to GHS conversion)
+  const getDisplayAmount = () => {
+    if (selectedMethod.startsWith('paystack_')) {
+      return totalFee * 12.5; // USD to GHS conversion
+    }
+    return totalFee;
+  };
 
   if (!open) return null;
 
@@ -106,15 +120,23 @@ export function PaymentModal({
             {breakdown.map((item, i) => (
               <div key={i} className="flex items-center justify-between py-1">
                 <span className="text-sm text-text-secondary">{item.label}</span>
-                <span className="text-sm text-text-primary">${item.amount.toFixed(2)}</span>
+                <span className="text-sm text-text-primary">
+                  {getCurrency() === "USD" ? "$" : "GH₵"}
+                  {(item.amount * (getCurrency() === "GHS" ? 12.5 : 1)).toFixed(2)}
+                </span>
               </div>
             ))}
             <div className="border-t border-border pt-2 mt-2 flex items-center justify-between">
               <span className="font-semibold text-text-primary">Total</span>
               <span className="text-xl font-bold text-accent">
-                {currency === "USD" ? "$" : currency}{totalFee.toFixed(2)}
+                {getCurrency() === "USD" ? "$" : "GH₵"}{getDisplayAmount().toFixed(2)}
               </span>
             </div>
+            {getCurrency() === "GHS" && (
+              <p className="text-xs text-text-muted mt-2">
+                * Amount displayed in Ghana Cedis (GHS) at current exchange rate
+              </p>
+            )}
           </div>
 
           {/* Payment Method Selection */}
@@ -211,7 +233,7 @@ export function PaymentModal({
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                <CreditCard size={16} /> Pay ${totalFee.toFixed(2)}
+                <CreditCard size={16} /> Pay {getCurrency() === "USD" ? "$" : "GH₵"}{getDisplayAmount().toFixed(2)}
               </span>
             )}
           </Button>

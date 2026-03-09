@@ -507,9 +507,12 @@ function NewApplicationPageInner() {
   const handlePay = async (method: string) => {
     if (!application) return;
     try {
+      // Use GHS for Paystack methods, USD for others
+      const currency = method.startsWith('paystack_') ? 'GHS' : 'USD';
+      
       const res = await api.post(`/applicant/applications/${application.id}/payment/initialize`, {
         payment_method: method,
-        currency: "USD"
+        currency: currency
       });
 
       if (res.data.success) {
