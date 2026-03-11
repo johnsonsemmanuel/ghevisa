@@ -5,9 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Card } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
+import { RiskBadge } from "@/components/ui/risk-badge";
 import { Search } from "lucide-react";
 import type { Application, PaginatedResponse } from "@/lib/types";
 
@@ -69,6 +71,13 @@ export default function GisCasesPage() {
       },
     },
     {
+      key: "risk_level",
+      header: "Risk Level",
+      render: (row: Application) => (
+        <RiskBadge level={row.riskAssessment?.risk_level ?? null} />
+      ),
+    },
+    {
       key: "status",
       header: "Status",
       render: (row: Application) => <StatusBadge status={row.status} />,
@@ -105,8 +114,8 @@ export default function GisCasesPage() {
       title="Case Queue"
       description="Applications assigned to Ghana Immigration Service"
     >
-      {/* Filters */}
-      <div className="card mb-6">
+      {/* Filters - Matching main dashboard card style */}
+      <Card variant="default" className="mb-6">
         <div className="grid sm:grid-cols-4 gap-4">
           <div className="relative">
             <Search
@@ -170,7 +179,7 @@ export default function GisCasesPage() {
             ]}
           />
         </div>
-      </div>
+      </Card>
 
       <DataTable<Application>
         columns={columns}

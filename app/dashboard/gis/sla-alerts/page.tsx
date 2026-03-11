@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -127,52 +128,63 @@ export default function GisSlaAlertsPage() {
       title="SLA Alerts"
       description="Monitor SLA compliance and address urgent cases"
     >
-      {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-info/10 rounded-xl flex items-center justify-center">
+      {/* Stats Cards - Matching main dashboard style */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card variant="default">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-info/8 flex items-center justify-center">
               <Clock size={20} className="text-info" />
             </div>
-            <div>
-              <p className="text-xs text-text-muted">Active Cases</p>
+            <div className="text-right">
               <p className="text-xl font-bold text-text-primary">{stats?.total_active || 0}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Active</p>
             </div>
           </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-success/10 rounded-xl flex items-center justify-center">
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Active Cases</h3>
+          <p className="text-xs text-text-secondary">Currently being processed</p>
+        </Card>
+
+        <Card variant="default">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-success/8 flex items-center justify-center">
               <CheckCircle2 size={20} className="text-success" />
             </div>
-            <div>
-              <p className="text-xs text-text-muted">Within SLA</p>
-              <p className="text-xl font-bold text-success">{stats?.within_sla || 0}</p>
+            <div className="text-right">
+              <p className="text-xl font-bold text-text-primary">{stats?.within_sla || 0}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">On Track</p>
             </div>
           </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-warning/10 rounded-xl flex items-center justify-center">
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Within SLA</h3>
+          <p className="text-xs text-text-secondary">Meeting deadlines</p>
+        </Card>
+
+        <Card variant="default">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-warning/8 flex items-center justify-center">
               <AlertTriangle size={20} className="text-warning" />
             </div>
-            <div>
-              <p className="text-xs text-text-muted">Approaching Breach</p>
-              <p className="text-xl font-bold text-warning">{stats?.approaching_breach || 0}</p>
+            <div className="text-right">
+              <p className="text-xl font-bold text-text-primary">{stats?.approaching_breach || 0}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Warning</p>
             </div>
           </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-danger/10 rounded-xl flex items-center justify-center">
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Approaching Breach</h3>
+          <p className="text-xs text-text-secondary">Within 12 hours of SLA</p>
+        </Card>
+
+        <Card variant="default">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-danger/8 flex items-center justify-center">
               <AlertCircle size={20} className="text-danger" />
             </div>
-            <div>
-              <p className="text-xs text-text-muted">Breached</p>
-              <p className="text-xl font-bold text-danger">{stats?.breached || 0}</p>
+            <div className="text-right">
+              <p className="text-xl font-bold text-text-primary">{stats?.breached || 0}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Urgent</p>
             </div>
           </div>
-        </div>
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Breached</h3>
+          <p className="text-xs text-text-secondary">Requires immediate action</p>
+        </Card>
       </div>
 
       {/* Compliance Rate */}

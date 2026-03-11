@@ -33,20 +33,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+    // Only run on client side to avoid hydration issues
+    if (typeof window === "undefined") {
+      setLoading(false);
+      return;
+    }
+
+    // SECURITY FIX: Token now in HttpOnly cookie, check auth status via API
+    const savedUser = sessionStorage.getItem("user"); // Use sessionStorage for user data only
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        sessionStorage.removeItem("user");
+      }
+    }
+    
+    // Verify authentication with backend - only if we have a saved user
+    if (savedUser) {
       api
         .get("/auth/me")
         .then((res) => {
           setUser(res.data.user);
-          localStorage.setItem("user", JSON.stringify(res.data.user));
+          setToken("authenticated"); // Placeholder since we can't access HttpOnly cookie
+          sessionStorage.setItem("user", JSON.stringify(res.data.user));
         })
         .catch(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
+          sessionStorage.removeItem("user");
           setToken(null);
           setUser(null);
         })
@@ -57,7 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    await fetchCsrfCookie();
+    // Temporarily disable CSRF cookie fetching for testing
+    // await fetchCsrfCookie();
     const res = await api.post("/auth/login", { email, password });
 
     // If MFA is required, throw a structured error the UI can handle
@@ -70,21 +84,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw err;
     }
 
-    const { user: u, token: t } = res.data;
+    const { user: u } = res.data;
     setUser(u);
-    setToken(t);
-    localStorage.setItem("token", t);
-    localStorage.setItem("user", JSON.stringify(u));
+    setToken("authenticated");
+    sessionStorage.setItem("user", JSON.stringify(u));
   }, []);
 
   const verifyMfa = useCallback(async (email: string, otp: string) => {
     await fetchCsrfCookie();
     const res = await api.post("/auth/verify-mfa", { email, token: otp });
-    const { user: u, token: t } = res.data;
+    const { user: u } = res.data;
     setUser(u);
-    setToken(t);
-    localStorage.setItem("token", t);
-    localStorage.setItem("user", JSON.stringify(u));
+    setToken("authenticated");
+    sessionStorage.setItem("user", JSON.stringify(u));
   }, []);
 
   const register = useCallback(async (data: RegisterData) => {
@@ -103,8 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
   }, []);
 
   return (

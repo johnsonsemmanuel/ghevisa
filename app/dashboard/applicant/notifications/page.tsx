@@ -144,17 +144,17 @@ export default function NotificationsPage() {
       description="Stay updated on your visa application status"
     >
       {/* Header with unread count and mark all as read */}
-      {unreadCount && unreadCount > 0 && (
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Bell size={18} className="text-accent" />
-            <span className="text-sm font-medium text-text-primary">
+      {unreadCount > 0 && (
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-1.5">
+            <Bell size={16} className="text-accent" />
+            <span className="text-xs font-medium text-text-primary">
               {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
             </span>
           </div>
           <button
             onClick={() => markAllAsReadMutation.mutate()}
-            className="text-xs text-accent hover:text-accent-dark font-medium"
+            className="text-[10px] text-accent hover:text-accent-dark font-medium"
           >
             Mark all as read
           </button>
@@ -162,7 +162,7 @@ export default function NotificationsPage() {
       )}
 
       {/* Notifications list */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {isLoading ? (
           <CardSkeleton />
         ) : notifications?.data?.length > 0 ? (
@@ -171,35 +171,35 @@ export default function NotificationsPage() {
             return (
             <div
               key={notif.id}
-              className={`bg-white rounded-xl border p-4 flex items-start gap-4 transition-all hover:shadow-sm ${
+              className={`bg-white rounded-lg border p-3 flex items-start gap-3 transition-all hover:shadow-sm ${
                 !notif.read_at ? "border-l-[3px] border-l-accent border-t-black/6 border-r-black/6 border-b-black/6" : "border-black/6"
               }`}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getNotificationBg(notif.type, parsedData)}`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${getNotificationBg(notif.type, parsedData)}`}>
                 {getNotificationIcon(notif.type, parsedData)}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-text-primary leading-snug">
+                    <p className="text-xs font-semibold text-text-primary leading-snug">
                       {parsedData.message}
                     </p>
-                    <p className="text-xs text-text-muted mt-1">
+                    <p className="text-[10px] text-text-muted mt-0.5">
                       {parsedData.reference_number}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[11px] text-text-muted whitespace-nowrap bg-surface px-2 py-0.5 rounded-md">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] text-text-muted whitespace-nowrap bg-surface px-1.5 py-0.5 rounded">
                       {new Date(notif.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
                       {!notif.read_at && (
                         <button
                           onClick={() => markAsReadMutation.mutate(notif.id)}
                           className="p-1 rounded hover:bg-surface/50 transition-colors"
                           title="Mark as read"
                         >
-                          <Check size={14} className="text-success" />
+                          <Check size={13} className="text-success" />
                         </button>
                       )}
                       <button
@@ -207,7 +207,7 @@ export default function NotificationsPage() {
                         className="p-1 rounded hover:bg-surface/50 transition-colors"
                         title="Delete notification"
                       >
-                        <Trash2 size={14} className="text-danger" />
+                        <Trash2 size={13} className="text-danger" />
                       </button>
                     </div>
                   </div>
@@ -217,12 +217,12 @@ export default function NotificationsPage() {
             );
           })
         ) : (
-          <div className="card text-center py-16">
-            <div className="w-16 h-16 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Bell size={28} className="text-text-muted" />
+          <div className="card text-center py-12">
+            <div className="w-14 h-14 bg-surface rounded-xl flex items-center justify-center mx-auto mb-3">
+              <Bell size={24} className="text-text-muted" />
             </div>
-            <p className="text-text-primary font-semibold mb-1">No Notifications</p>
-            <p className="text-sm text-text-muted max-w-xs mx-auto">
+            <p className="text-text-primary font-semibold text-sm mb-1">No Notifications</p>
+            <p className="text-xs text-text-muted max-w-xs mx-auto">
               You will receive notifications here when there are updates to your applications.
             </p>
           </div>
@@ -230,30 +230,30 @@ export default function NotificationsPage() {
       </div>
 
       {/* Email Preferences */}
-      <div className="card mt-8">
-        <div className="flex items-center gap-2.5 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-info/8 flex items-center justify-center">
-            <Mail size={16} className="text-info" />
+      <div className="card !p-4 mt-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-7 h-7 rounded-lg bg-info/8 flex items-center justify-center">
+            <Mail size={14} className="text-info" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-text-primary">Email Notifications</h3>
-            <p className="text-xs text-text-muted">Sent to <strong>{user?.email}</strong></p>
+            <h3 className="text-sm font-bold text-text-primary">Email Notifications</h3>
+            <p className="text-[10px] text-text-muted">Sent to <strong>{user?.email}</strong></p>
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {[
             { label: "Application Status Updates", desc: "When your application status changes", enabled: true },
             { label: "Document Verification", desc: "When documents are verified or need re-upload", enabled: true },
             { label: "Payment Confirmations", desc: "Receipts and payment status", enabled: true },
             { label: "eVisa Ready", desc: "When your approved eVisa is ready for download", enabled: true },
           ].map((pref, i) => (
-            <div key={i} className="flex items-center justify-between p-3.5 rounded-xl bg-surface/80 border border-border-light">
+            <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-surface/80 border border-border-light">
               <div>
-                <p className="text-sm font-medium text-text-primary">{pref.label}</p>
-                <p className="text-[11px] text-text-muted mt-0.5">{pref.desc}</p>
+                <p className="text-xs font-medium text-text-primary">{pref.label}</p>
+                <p className="text-[10px] text-text-muted mt-0.5">{pref.desc}</p>
               </div>
-              <div className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors ${pref.enabled ? "bg-accent" : "bg-border"}`}>
-                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200 ${pref.enabled ? "right-1" : "left-1"}`} />
+              <div className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${pref.enabled ? "bg-accent" : "bg-border"}`}>
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200 ${pref.enabled ? "right-0.5" : "left-0.5"}`} />
               </div>
             </div>
           ))}

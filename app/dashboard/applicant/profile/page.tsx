@@ -72,19 +72,19 @@ export default function ProfilePage() {
       description="Manage your account information and security"
     >
       {/* Avatar Header */}
-      <div className="card mb-6">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white text-xl font-bold shadow-sm">
+      <div className="card !p-4 mb-5">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white text-lg font-bold shadow-sm">
             {user?.first_name?.[0]}{user?.last_name?.[0]}
           </div>
           <div>
-            <h2 className="text-lg font-bold text-text-primary">{user?.first_name} {user?.last_name}</h2>
-            <p className="text-sm text-text-muted">{user?.email}</p>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-accent/8 text-accent capitalize">
-                <Shield size={11} /> {user?.role?.replace("_", " ")}
+            <h2 className="text-base font-bold text-text-primary">{user?.first_name} {user?.last_name}</h2>
+            <p className="text-xs text-text-muted">{user?.email}</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent/8 text-accent capitalize">
+                <Shield size={10} /> {user?.role?.replace("_", " ")}
               </span>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-surface text-text-muted">
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-surface text-text-muted">
                 {user?.locale === "fr" ? "Français" : "English"}
               </span>
             </div>
@@ -92,21 +92,21 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-5">
         {/* Profile Information */}
-        <div className="card">
-          <div className="flex items-center gap-2.5 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-primary/6 flex items-center justify-center">
-              <User size={16} className="text-primary" />
+        <div className="card !p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-primary/6 flex items-center justify-center">
+              <User size={14} className="text-primary" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-text-primary">Personal Information</h2>
-              <p className="text-xs text-text-muted">Update your personal details</p>
+              <h2 className="text-sm font-bold text-text-primary">Personal Information</h2>
+              <p className="text-[10px] text-text-muted">Update your personal details</p>
             </div>
           </div>
 
-          <form onSubmit={handleProfileUpdate} className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
+          <form onSubmit={handleProfileUpdate} className="space-y-3">
+            <div className="grid sm:grid-cols-2 gap-3">
               <Input
                 label="First Name"
                 value={profile.first_name}
@@ -136,25 +136,25 @@ export default function ProfilePage() {
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
               placeholder="+233 XX XXX XXXX"
             />
-            <Button type="submit" loading={loading} leftIcon={<Save size={16} />}>
+            <Button type="submit" loading={loading} leftIcon={<Save size={14} />} size="sm">
               Save Changes
             </Button>
           </form>
         </div>
 
         {/* Password Change */}
-        <div className="card">
-          <div className="flex items-center gap-2.5 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-gold/8 flex items-center justify-center">
-              <Lock size={16} className="text-gold" />
+        <div className="card !p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-gold/8 flex items-center justify-center">
+              <Lock size={14} className="text-gold" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-text-primary">Change Password</h2>
-              <p className="text-xs text-text-muted">Update your account password</p>
+              <h2 className="text-sm font-bold text-text-primary">Change Password</h2>
+              <p className="text-[10px] text-text-muted">Update your account password</p>
             </div>
           </div>
 
-          <form onSubmit={handlePasswordChange} className="space-y-4">
+          <form onSubmit={handlePasswordChange} className="space-y-3">
             <Input
               label="Current Password"
               type="password"
@@ -180,7 +180,7 @@ export default function ProfilePage() {
               placeholder="••••••••"
               required
             />
-            <Button type="submit" loading={passwordLoading} leftIcon={<Lock size={16} />}>
+            <Button type="submit" loading={passwordLoading} leftIcon={<Lock size={14} />} size="sm">
               Change Password
             </Button>
           </form>

@@ -61,11 +61,14 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Payments", href: "/dashboard/gis/payments", icon: <BarChart3 size={20} /> },
   ],
   GIS_ADMIN: [
-    { label: "Dashboard", href: "/dashboard/gis", icon: <LayoutDashboard size={20} /> },
+    { label: "Admin Overview", href: "/dashboard/gis/admin", icon: <LayoutDashboard size={20} /> },
+    { label: "Applicants", href: "/dashboard/gis/admin/applicants", icon: <Users size={20} /> },
+    { label: "Officers", href: "/dashboard/gis/admin/officers", icon: <Shield size={20} /> },
+    { label: "Applications", href: "/dashboard/gis/admin/applications", icon: <FileText size={20} /> },
     { label: "Case Queue", href: "/dashboard/gis/cases", icon: <FolderOpen size={20} /> },
+    { label: "Payments", href: "/dashboard/gis/payments", icon: <BarChart3 size={20} /> },
     { label: "Support", href: "/dashboard/gis/support", icon: <HelpCircle size={20} /> },
     { label: "SLA Alerts", href: "/dashboard/gis/sla-alerts", icon: <AlertTriangle size={20} /> },
-    { label: "Payments", href: "/dashboard/gis/payments", icon: <BarChart3 size={20} /> },
   ],
   // MFA roles - all use same navigation
   MFA_REVIEWING_OFFICER: [
@@ -79,7 +82,11 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Payments", href: "/dashboard/mfa/payments", icon: <BarChart3 size={20} /> },
   ],
   MFA_ADMIN: [
-    { label: "Dashboard", href: "/dashboard/mfa", icon: <LayoutDashboard size={20} /> },
+    { label: "Admin Overview", href: "/dashboard/mfa/admin", icon: <LayoutDashboard size={20} /> },
+    { label: "Applicants", href: "/dashboard/mfa/admin/applicants", icon: <Users size={20} /> },
+    { label: "Officers", href: "/dashboard/mfa/admin/officers", icon: <Shield size={20} /> },
+    { label: "Applications", href: "/dashboard/mfa/admin/applications", icon: <FileText size={20} /> },
+    { label: "Mission Management", href: "/dashboard/mfa/admin/missions", icon: <Globe size={20} /> },
     { label: "Escalations", href: "/dashboard/mfa/escalations", icon: <AlertTriangle size={20} /> },
     { label: "Payments", href: "/dashboard/mfa/payments", icon: <BarChart3 size={20} /> },
   ],
@@ -88,6 +95,11 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Overview", href: "/dashboard/admin", icon: <LayoutDashboard size={20} /> },
     { label: "Users", href: "/dashboard/admin/users", icon: <Users size={20} /> },
     { label: "Applications", href: "/dashboard/admin/applications", icon: <FileText size={20} /> },
+    { label: "System Performance", href: "/dashboard/admin/system-performance", icon: <BarChart3 size={20} /> },
+    { label: "Advanced Analytics", href: "/dashboard/admin/analytics", icon: <BarChart3 size={20} /> },
+    { label: "Alert Management", href: "/dashboard/admin/alerts", icon: <Bell size={20} /> },
+    { label: "Cross-Agency Apps", href: "/dashboard/admin/cross-agency-applications", icon: <Globe size={20} /> },
+    { label: "ETA Management", href: "/dashboard/admin/eta-management", icon: <FileText size={20} /> },
     { label: "Payments", href: "/dashboard/admin/payments", icon: <BarChart3 size={20} /> },
     { label: "Financial Reports", href: "/dashboard/admin/financial", icon: <DollarSign size={20} /> },
     { label: "Country Analytics", href: "/dashboard/admin/countries", icon: <Globe size={20} /> },
@@ -95,6 +107,49 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Visa Types", href: "/dashboard/admin/visa-types", icon: <FileText size={20} /> },
     { label: "Tier Rules", href: "/dashboard/admin/tier-rules", icon: <Settings size={20} /> },
     { label: "Audit Logs", href: "/dashboard/admin/reports/audit-logs", icon: <FileText size={20} /> },
+  ],
+  // Border roles
+  BORDER_OFFICER: [
+    { label: "Verification Portal", href: "/dashboard/border", icon: <Shield size={20} /> },
+    { label: "Operations", href: "/dashboard/border/operations", icon: <BarChart3 size={20} /> },
+    { label: "Reports", href: "/dashboard/border/reports", icon: <FileText size={20} /> },
+  ],
+  BORDER_SUPERVISOR: [
+    { label: "Verification Portal", href: "/dashboard/border", icon: <Shield size={20} /> },
+    { label: "Operations", href: "/dashboard/border/operations", icon: <BarChart3 size={20} /> },
+    { label: "Reports", href: "/dashboard/border/reports", icon: <FileText size={20} /> },
+  ],
+  // Airline roles
+  AIRLINE_STAFF: [
+    { label: "Verification Portal", href: "/dashboard/airline", icon: <Shield size={20} /> },
+    { label: "Operations", href: "/dashboard/airline/operations", icon: <BarChart3 size={20} /> },
+    { label: "Reports", href: "/dashboard/airline/reports", icon: <FileText size={20} /> },
+  ],
+  AIRLINE_ADMIN: [
+    { label: "Verification Portal", href: "/dashboard/airline", icon: <Shield size={20} /> },
+    { label: "Operations", href: "/dashboard/airline/operations", icon: <BarChart3 size={20} /> },
+    { label: "Reports", href: "/dashboard/airline/reports", icon: <FileText size={20} /> },
+  ],
+  // Legacy role names for backward compatibility
+  border_officer: [
+    { label: "Verification Portal", href: "/dashboard/border", icon: <Shield size={20} /> },
+    { label: "Operations", href: "/dashboard/border/operations", icon: <BarChart3 size={20} /> },
+    { label: "Reports", href: "/dashboard/border/reports", icon: <FileText size={20} /> },
+  ],
+  border_supervisor: [
+    { label: "Verification Portal", href: "/dashboard/border", icon: <Shield size={20} /> },
+    { label: "Operations", href: "/dashboard/border/operations", icon: <BarChart3 size={20} /> },
+    { label: "Reports", href: "/dashboard/border/reports", icon: <FileText size={20} /> },
+  ],
+  airline_staff: [
+    { label: "Verification Portal", href: "/dashboard/airline", icon: <Shield size={20} /> },
+    { label: "Operations", href: "/dashboard/airline/operations", icon: <BarChart3 size={20} /> },
+    { label: "Reports", href: "/dashboard/airline/reports", icon: <FileText size={20} /> },
+  ],
+  airline_admin: [
+    { label: "Verification Portal", href: "/dashboard/airline", icon: <Shield size={20} /> },
+    { label: "Operations", href: "/dashboard/airline/operations", icon: <BarChart3 size={20} /> },
+    { label: "Reports", href: "/dashboard/airline/reports", icon: <FileText size={20} /> },
   ],
   // Legacy role names for backward compatibility
   gis_officer: [
@@ -113,6 +168,11 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Overview", href: "/dashboard/admin", icon: <LayoutDashboard size={20} /> },
     { label: "Users", href: "/dashboard/admin/users", icon: <Users size={20} /> },
     { label: "Applications", href: "/dashboard/admin/applications", icon: <FileText size={20} /> },
+    { label: "System Performance", href: "/dashboard/admin/system-performance", icon: <BarChart3 size={20} /> },
+    { label: "Advanced Analytics", href: "/dashboard/admin/analytics", icon: <BarChart3 size={20} /> },
+    { label: "Alert Management", href: "/dashboard/admin/alerts", icon: <Bell size={20} /> },
+    { label: "Cross-Agency Apps", href: "/dashboard/admin/cross-agency-applications", icon: <Globe size={20} /> },
+    { label: "ETA Management", href: "/dashboard/admin/eta-management", icon: <FileText size={20} /> },
     { label: "Payments", href: "/dashboard/admin/payments", icon: <BarChart3 size={20} /> },
     { label: "Financial Reports", href: "/dashboard/admin/financial", icon: <DollarSign size={20} /> },
     { label: "Country Analytics", href: "/dashboard/admin/countries", icon: <Globe size={20} /> },
@@ -136,7 +196,17 @@ const roleLabels: Record<UserRole, string> = {
   MFA_ADMIN: "MFA Administrator",
   // Admin
   SYSTEM_ADMIN: "System Administrator",
+  // Border roles
+  BORDER_OFFICER: "Border Officer",
+  BORDER_SUPERVISOR: "Border Supervisor",
+  // Airline roles
+  AIRLINE_STAFF: "Airline Staff",
+  AIRLINE_ADMIN: "Airline Administrator",
   // Legacy role names for backward compatibility
+  border_officer: "Border Officer",
+  border_supervisor: "Border Supervisor",
+  airline_staff: "Airline Staff",
+  airline_admin: "Airline Administrator",
   gis_officer: "GIS Officer",
   mfa_reviewer: "MFA Reviewer",
   admin: "Administrator",
@@ -165,11 +235,15 @@ export function Sidebar() {
 
   // Check if current path exactly matches or is a subpage (but not sibling routes)
   const isActive = (href: string) => {
+    // Exact match always wins
     if (pathname === href) return true;
-    // For dashboard root pages, only match exact
-    if (href.endsWith("/applicant") || href.endsWith("/gis") || href.endsWith("/mfa") || href.endsWith("/admin")) {
+    
+    // For dashboard root pages, only match exact (don't match subpages)
+    if (href.endsWith("/applicant") || href.endsWith("/gis") || href.endsWith("/mfa") || 
+        href.endsWith("/admin") || href.endsWith("/border") || href.endsWith("/airline")) {
       return pathname === href;
     }
+    
     // For other pages, match if it's a subpage
     return pathname.startsWith(href + "/");
   };

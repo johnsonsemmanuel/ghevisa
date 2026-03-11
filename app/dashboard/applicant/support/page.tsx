@@ -166,18 +166,18 @@ export default function ApplicantSupportPage() {
           <ArrowLeft size={16} /> Back to Support
         </button>
 
-        <div className="card mb-4">
-          <div className="flex items-center justify-between mb-3">
+        <div className="card !p-4 mb-3">
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <h2 className="font-bold text-text-primary">{selectedTicket.subject}</h2>
-              <p className="text-xs text-text-muted mt-0.5">{selectedTicket.reference_number} · {reasonLabels[selectedTicket.reason] || selectedTicket.reason}</p>
+              <h2 className="font-bold text-text-primary text-sm">{selectedTicket.subject}</h2>
+              <p className="text-[10px] text-text-muted mt-0.5">{selectedTicket.reference_number} · {reasonLabels[selectedTicket.reason] || selectedTicket.reason}</p>
             </div>
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${statusColors[selectedTicket.status] || "bg-gray-50 text-gray-600"}`}>
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${statusColors[selectedTicket.status] || "bg-gray-50 text-gray-600"}`}>
               {selectedTicket.status.replace("_", " ")}
             </span>
           </div>
           {selectedTicket.application && (
-            <div className="text-xs bg-surface rounded-lg px-3 py-2 inline-block">
+            <div className="text-[10px] bg-surface rounded-lg px-2.5 py-1.5 inline-block">
               Linked Application: <strong>{selectedTicket.application.reference_number}</strong> — <span className="capitalize">{selectedTicket.application.status?.replace("_", " ")}</span>
             </div>
           )}
@@ -185,16 +185,16 @@ export default function ApplicantSupportPage() {
 
         {/* Messages */}
         <div className="card p-0 overflow-hidden">
-          <div className="max-h-[50vh] overflow-y-auto p-5 space-y-4">
+          <div className="max-h-[50vh] overflow-y-auto p-4 space-y-3">
             {selectedTicket.messages?.map((msg) => (
               <div key={msg.id} className={`flex ${msg.is_officer_reply ? "justify-start" : "justify-end"}`}>
-                <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${msg.is_officer_reply ? "bg-surface border border-border" : "bg-accent/10 border border-accent/20"}`}>
-                  <p className="text-xs font-semibold mb-1">
+                <div className={`max-w-[75%] rounded-xl px-3 py-2.5 ${msg.is_officer_reply ? "bg-surface border border-border" : "bg-accent/10 border border-accent/20"}`}>
+                  <p className="text-[10px] font-semibold mb-1">
                     {msg.is_officer_reply ? `${msg.user?.first_name || "Officer"} ${msg.user?.last_name || ""}` : "You"}
-                    {msg.is_officer_reply && <span className="ml-1 text-accent text-[10px] font-medium">(Officer)</span>}
+                    {msg.is_officer_reply && <span className="ml-1 text-accent text-[9px] font-medium">(Officer)</span>}
                   </p>
-                  <p className="text-sm text-text-primary whitespace-pre-wrap">{msg.message}</p>
-                  <p className="text-[10px] text-text-muted mt-1.5">{new Date(msg.created_at).toLocaleString()}</p>
+                  <p className="text-xs text-text-primary whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                  <p className="text-[9px] text-text-muted mt-1">{new Date(msg.created_at).toLocaleString()}</p>
                 </div>
               </div>
             ))}
@@ -203,16 +203,16 @@ export default function ApplicantSupportPage() {
 
           {/* Reply Input */}
           {selectedTicket.status !== "closed" && (
-            <div className="border-t border-border p-4 flex gap-3">
+            <div className="border-t border-border p-3 flex gap-2">
               <input
                 type="text"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendReply()}
                 placeholder="Type your message..."
-                className="flex-1 px-4 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/20"
+                className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-accent/20"
               />
-              <Button onClick={handleSendReply} loading={replyMutation.isPending} leftIcon={<Send size={16} />}>
+              <Button onClick={handleSendReply} loading={replyMutation.isPending} leftIcon={<Send size={14} />} size="sm">
                 Send
               </Button>
             </div>
@@ -230,14 +230,14 @@ export default function ApplicantSupportPage() {
           <ArrowLeft size={16} /> Back to Support
         </button>
         <div className="max-w-xl">
-          <div className="card">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-accent/8 flex items-center justify-center">
-                <MessageSquare size={16} className="text-accent" />
+          <div className="card !p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-accent/8 flex items-center justify-center">
+                <MessageSquare size={14} className="text-accent" />
               </div>
-              <h3 className="text-base font-bold text-text-primary">New Support Request</h3>
+              <h3 className="text-sm font-bold text-text-primary">New Support Request</h3>
             </div>
-            <form onSubmit={handleSubmitContact} className="space-y-4">
+            <form onSubmit={handleSubmitContact} className="space-y-3">
               <Input
                 label="Application Reference (Optional)"
                 placeholder="e.g. GH-EV-20260305-BF71435D"
@@ -274,7 +274,7 @@ export default function ApplicantSupportPage() {
                 rows={5}
                 required
               />
-              <Button type="submit" className="w-full" loading={createTicketMutation.isPending} leftIcon={<Send size={16} />}>
+              <Button type="submit" className="w-full" loading={createTicketMutation.isPending} leftIcon={<Send size={14} />} size="sm">
                 Submit Ticket
               </Button>
             </form>
@@ -295,20 +295,20 @@ export default function ApplicantSupportPage() {
         </Button>
       }
     >
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-5">
           {/* My Tickets */}
-          <div className="card">
-            <div className="flex items-center gap-2.5 mb-4">
-              <Inbox size={18} className="text-accent" />
-              <h2 className="text-base font-bold text-text-primary">
-                My Tickets {unreadCount > 0 && <span className="ml-2 text-xs bg-danger text-white rounded-full px-2 py-0.5">{unreadCount} new</span>}
+          <div className="card !p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Inbox size={16} className="text-accent" />
+              <h2 className="text-sm font-bold text-text-primary">
+                My Tickets {unreadCount > 0 && <span className="ml-2 text-[10px] bg-danger text-white rounded-full px-1.5 py-0.5">{unreadCount} new</span>}
               </h2>
             </div>
             {tickets.length === 0 ? (
-              <div className="text-center py-10">
-                <Inbox size={32} className="text-text-muted mx-auto mb-3" />
-                <p className="text-sm text-text-muted">No tickets yet. Create one to get help.</p>
+              <div className="text-center py-8">
+                <Inbox size={28} className="text-text-muted mx-auto mb-2" />
+                <p className="text-xs text-text-muted">No tickets yet. Create one to get help.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -318,18 +318,18 @@ export default function ApplicantSupportPage() {
                     <button
                       key={ticket.id}
                       onClick={() => { setSelectedTicketId(ticket.id); setView("thread"); }}
-                      className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all cursor-pointer hover:bg-surface ${hasUnread ? "border-accent/30 bg-accent/3" : "border-border"}`}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all cursor-pointer hover:bg-surface ${hasUnread ? "border-accent/30 bg-accent/3" : "border-border"}`}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-text-primary truncate">{ticket.subject}</p>
-                          {hasUnread && <span className="w-2 h-2 rounded-full bg-accent shrink-0" />}
+                          <p className="text-xs font-semibold text-text-primary truncate">{ticket.subject}</p>
+                          {hasUnread && <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />}
                         </div>
-                        <p className="text-xs text-text-muted mt-0.5">
+                        <p className="text-[10px] text-text-muted mt-0.5">
                           {ticket.reference_number} · {reasonLabels[ticket.reason] || ticket.reason} · {new Date(ticket.updated_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <span className={`text-[10px] font-semibold px-2 py-1 rounded-full border capitalize shrink-0 ${statusColors[ticket.status] || ""}`}>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize shrink-0 ${statusColors[ticket.status] || ""}`}>
                         {ticket.status.replace("_", " ")}
                       </span>
                     </button>
@@ -340,19 +340,19 @@ export default function ApplicantSupportPage() {
           </div>
 
           {/* FAQ */}
-          <div className="card">
-            <div className="flex items-center gap-2.5 mb-4">
-              <HelpCircle size={16} className="text-gold" />
-              <h2 className="text-base font-bold text-text-primary">FAQ</h2>
+          <div className="card !p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <HelpCircle size={14} className="text-gold" />
+              <h2 className="text-sm font-bold text-text-primary">FAQ</h2>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {faqs.map((faq, index) => (
-                <div key={index} className={`rounded-xl border transition-all ${expandedFaq === index ? "border-accent/20 bg-accent/3" : "border-border-light hover:bg-surface"}`}>
-                  <button onClick={() => setExpandedFaq(expandedFaq === index ? null : index)} className="w-full flex items-center justify-between p-3.5 text-left cursor-pointer">
-                    <span className="text-sm font-medium text-text-primary pr-4">{faq.question}</span>
-                    {expandedFaq === index ? <ChevronUp size={14} className="text-accent shrink-0" /> : <ChevronDown size={14} className="text-text-muted shrink-0" />}
+                <div key={index} className={`rounded-lg border transition-all ${expandedFaq === index ? "border-accent/20 bg-accent/3" : "border-border-light hover:bg-surface"}`}>
+                  <button onClick={() => setExpandedFaq(expandedFaq === index ? null : index)} className="w-full flex items-center justify-between p-3 text-left cursor-pointer">
+                    <span className="text-xs font-medium text-text-primary pr-3">{faq.question}</span>
+                    {expandedFaq === index ? <ChevronUp size={13} className="text-accent shrink-0" /> : <ChevronDown size={13} className="text-text-muted shrink-0" />}
                   </button>
-                  {expandedFaq === index && <div className="px-3.5 pb-3.5"><p className="text-sm text-text-secondary">{faq.answer}</p></div>}
+                  {expandedFaq === index && <div className="px-3 pb-3"><p className="text-xs text-text-secondary leading-relaxed">{faq.answer}</p></div>}
                 </div>
               ))}
             </div>
@@ -360,33 +360,33 @@ export default function ApplicantSupportPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
-          <div className="card">
-            <h3 className="font-semibold text-text-primary mb-4">Contact Us</h3>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center shrink-0"><Mail size={16} className="text-info" /></div>
+        <div className="space-y-5">
+          <div className="card !p-4">
+            <h3 className="font-semibold text-text-primary text-sm mb-3">Contact Us</h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 bg-info/10 rounded-lg flex items-center justify-center shrink-0"><Mail size={14} className="text-info" /></div>
                 <div>
-                  <p className="text-sm font-medium text-text-primary">Email</p>
-                  <a href="mailto:support@ghevisa.gov.gh" className="text-sm text-primary hover:underline">support@ghevisa.gov.gh</a>
+                  <p className="text-xs font-medium text-text-primary">Email</p>
+                  <a href="mailto:support@ghevisa.gov.gh" className="text-xs text-primary hover:underline">support@ghevisa.gov.gh</a>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center shrink-0"><Phone size={16} className="text-success" /></div>
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 bg-success/10 rounded-lg flex items-center justify-center shrink-0"><Phone size={14} className="text-success" /></div>
                 <div>
-                  <p className="text-sm font-medium text-text-primary">Phone</p>
-                  <p className="text-sm text-text-secondary">+233 302 123 456</p>
-                  <p className="text-xs text-text-muted">Mon-Fri, 8am-5pm GMT</p>
+                  <p className="text-xs font-medium text-text-primary">Phone</p>
+                  <p className="text-xs text-text-secondary">+233 302 123 456</p>
+                  <p className="text-[10px] text-text-muted">Mon-Fri, 8am-5pm GMT</p>
                 </div>
               </div>
             </div>
           </div>
-          <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10 p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock size={15} className="text-primary" />
-              <h4 className="text-sm font-bold text-text-primary">Response Time</h4>
+          <div className="rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10 p-4">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Clock size={13} className="text-primary" />
+              <h4 className="text-xs font-bold text-text-primary">Response Time</h4>
             </div>
-            <p className="text-sm text-text-secondary">
+            <p className="text-xs text-text-secondary leading-relaxed">
               We typically respond within <strong className="text-text-primary">24-48 hours</strong> during business days.
             </p>
           </div>

@@ -10,10 +10,18 @@ export type UserRole =
   | "MFA_APPROVAL_OFFICER"
   | "MFA_ADMIN"
   | "SYSTEM_ADMIN"
-  // Legacy role names for backward compatibility
+  // Database role names (current format)
   | "gis_officer"
+  | "gis_approver"
+  | "gis_admin"
   | "mfa_reviewer"
-  | "admin";
+  | "mfa_approver"
+  | "mfa_admin"
+  | "admin"
+  | "border_officer"
+  | "border_supervisor"
+  | "airline_staff"
+  | "airline_admin";
 export type Agency = "GIS" | "MFA" | "ADMIN";
 
 export interface User {
@@ -27,6 +35,44 @@ export interface User {
   agency: Agency | null;
   locale: "en" | "fr";
   permissions?: string[];
+}
+
+/* ── Agency Admin (GIS / MFA) ────────────────── */
+
+export interface AgencyAdminMetrics {
+  total_applications: number;
+  review_queue: number;
+  approval_queue: number;
+  under_review: number;
+  pending_approval: number;
+  approved: number;
+  denied: number;
+  escalated?: number;
+  completed_payments: string | number;
+  active_officers: number;
+}
+
+export interface AgencyApplicantSummary {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string | null;
+  gis_applications_count?: number;
+  mfa_applications_count?: number;
+  applications: Pick<Application, "id" | "reference_number" | "status" | "assigned_agency" | "created_at" | "owner_mission_id">[];
+  updated_at: string;
+}
+
+export interface AgencyOfficerSummary {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  assigned_cases_count: number;
+  mfa_mission_id?: number | null;
 }
 
 export interface AuthResponse {
@@ -166,12 +212,14 @@ export interface Application {
   tier: Tier | null;
   processing_tier: ProcessingTier | null;
   assigned_agency: "gis" | "mfa" | null;
+  owner_mission_id?: number | null;
   risk_screening_status: "pending" | "in_progress" | "cleared" | "flagged" | null;
   risk_score: number | null;
   risk_level: "low" | "medium" | "high" | "critical" | null;
   riskAssessment?: {
     risk_score: number;
     risk_level: "low" | "medium" | "high" | "critical";
+    risk_reasons?: string[];
     factors: Array<{
       name: string;
       triggered: boolean;
@@ -179,6 +227,14 @@ export interface Application {
       details?: string;
     }>;
     watchlist_match: boolean;
+    notes?: string;
+    override_flag?: boolean;
+    override_note?: string;
+    override_by?: {
+      first_name: string;
+      last_name: string;
+    };
+    override_timestamp?: string;
   };
   watchlist_flagged: boolean;
   assigned_officer_id: number | null;

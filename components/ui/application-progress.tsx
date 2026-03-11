@@ -124,29 +124,30 @@ export function ApplicationProgress({
         </div>
       </div>
 
-      {/* Steps */}
-      <div className="space-y-4">
+      {/* Steps - horizontal layout */}
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {steps.map((step, index) => (
-          <div
+          <button
             key={step.id}
-            className={`flex items-center p-4 rounded-lg border-2 transition-all cursor-pointer
+            type="button"
+            className={`text-left p-3 rounded-lg border-2 transition-all cursor-pointer flex flex-col gap-2
               ${getStatusColor(step.status)}
               ${onStepClick ? "hover:shadow-md" : ""}`}
             onClick={() => onStepClick?.(step.id)}
           >
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                {getStatusIcon(step.status)}
-              </div>
+            <div className="flex items-center gap-2">
+              {getStatusIcon(step.status)}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium">{step.title}</h4>
-                  <span className="text-xs text-gray-500">{step.estimatedTime}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs sm:text-sm font-medium truncate">{step.title}</h4>
+                  <span className="text-[10px] sm:text-xs text-gray-500 shrink-0">
+                    {step.estimatedTime}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">{step.description}</p>
               </div>
             </div>
-          </div>
+            <p className="text-[11px] sm:text-xs text-gray-600 line-clamp-2">{step.description}</p>
+          </button>
         ))}
       </div>
 

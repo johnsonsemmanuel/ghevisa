@@ -21,7 +21,7 @@ const PAYMENT_METHODS = [
     id: "paystack_card",
     label: "Credit / Debit Card",
     description: "Visa, Mastercard, or Verve via Paystack",
-    icon: <CreditCard size={22} className="text-info" />,
+    icon: <CreditCard size={22} className="text-accent" />,
     badge: "Instant",
   },
   {

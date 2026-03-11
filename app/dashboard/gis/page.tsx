@@ -9,6 +9,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
 import { MetricsSkeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
 import {
   FolderOpen,
   Clock,
@@ -18,11 +19,12 @@ import {
   ChevronRight,
   FileCheck,
   Inbox,
-  BadgeCheck,
   Shield,
-  Users,
   TrendingUp,
   BarChart3,
+  FileText,
+  AlertCircle,
+  BadgeCheck,
 } from "lucide-react";
 import type { GisMetrics, Application } from "@/lib/types";
 
@@ -84,163 +86,167 @@ export default function GisDashboard() {
       }
     >
       {/* ── Welcome Banner ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent via-accent-light to-accent p-6 lg:p-8 mb-8">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-gold/15 rounded-full translate-y-1/2" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-accent via-accent-light to-accent p-5 lg:p-6 mb-6">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-1/2 w-32 h-32 bg-gold/15 rounded-full translate-y-1/2" />
         <div className="relative z-10">
-          <p className="text-white/80 text-sm font-medium mb-1">{greeting()},</p>
-          <h2 className="text-white text-2xl font-bold mb-2">
+          <p className="text-white/80 text-xs font-medium mb-0.5">{greeting()},</p>
+          <h2 className="text-white text-xl font-bold mb-1.5">
             {user?.first_name || "Officer"} {user?.last_name || ""}
           </h2>
-          <p className="text-white/70 text-sm max-w-md">
+          <p className="text-white/70 text-xs max-w-md leading-relaxed">
             Review and process visa applications assigned to the Ghana Immigration Service.
           </p>
-          <div className="flex items-center gap-3 mt-5">
+          <div className="flex items-center gap-2.5 mt-4">
             <Button
               onClick={() => router.push("/dashboard/gis/cases?queue=review_queue")}
-              leftIcon={<FolderOpen size={15} />}
-              className="!bg-white !text-accent hover:!bg-white/90 !shadow-lg !font-bold"
+              leftIcon={<FolderOpen size={14} />}
+              className="!bg-white !text-accent hover:!bg-white/90 !shadow-lg !font-semibold !text-sm !py-2 !px-4"
             >
               Review Queue
             </Button>
             <Button
               variant="ghost"
               onClick={() => router.push("/dashboard/gis/cases")}
-              className="!text-white/90 hover:!text-white hover:!bg-white/15"
+              className="!text-white/90 hover:!text-white hover:!bg-white/15 !text-sm !py-2 !px-3"
             >
-              All Cases <ArrowRight size={14} className="ml-1" />
+              All Cases <ArrowRight size={13} className="ml-1" />
             </Button>
           </div>
         </div>
       </div>
 
-      {/* ── Area Selection Cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Review Queue */}
-        <div 
-          className={`card p-6 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+      {/* ── Area Selection Cards (aligned with applicant dashboard card style) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Review Queue (New / Draft-equivalent) */}
+        <Card 
+          variant="interactive"
+          className={`${
             selectedArea === "review_queue" 
               ? "ring-2 ring-info bg-info/5 border-info" 
               : "hover:border-info/30"
           }`}
           onClick={() => setSelectedArea(selectedArea === "review_queue" ? null : "review_queue")}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl bg-info/8 flex items-center justify-center">
-              <FolderOpen size={24} className="text-info" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-info/8 flex items-center justify-center">
+              <FileText size={20} className="text-info" />
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-text-primary">{metrics?.review_queue ?? 0}</p>
-              <p className="text-xs text-text-muted">Pending</p>
+              <p className="text-xl font-bold text-text-primary">{metrics?.review_queue ?? 0}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Cases</p>
             </div>
           </div>
-          <h3 className="font-semibold text-text-primary mb-2">Review Queue</h3>
-          <p className="text-sm text-text-secondary mb-4">Applications waiting for initial review and processing.</p>
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Assigned Cases</h3>
+          <p className="text-xs text-text-secondary mb-3">Waiting for initial GIS review.</p>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-text-muted">
+            <span className="text-[10px] text-text-muted">
               {selectedArea === "review_queue" ? "Click to hide details" : "Click to view details"}
             </span>
-            <ChevronRight size={16} className={`text-text-muted transition-transform ${selectedArea === "review_queue" ? "rotate-90" : ""}`} />
+            <ChevronRight size={14} className={`text-text-muted transition-transform ${selectedArea === "review_queue" ? "rotate-90" : ""}`} />
           </div>
-        </div>
+        </Card>
 
-        {/* Approval Queue */}
-        <div 
-          className={`card p-6 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+        {/* In Progress (Review + Approval) */}
+        <Card 
+          variant="interactive"
+          className={`${
             selectedArea === "approval_queue" 
               ? "ring-2 ring-warning bg-warning/5 border-warning" 
               : "hover:border-warning/30"
           }`}
           onClick={() => setSelectedArea(selectedArea === "approval_queue" ? null : "approval_queue")}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl bg-warning/8 flex items-center justify-center">
-              <BadgeCheck size={24} className="text-warning" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-warning/8 flex items-center justify-center">
+              <TrendingUp size={20} className="text-warning" />
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-text-primary">{metrics?.approval_queue ?? 0}</p>
-              <p className="text-xs text-text-muted">Pending</p>
+              <p className="text-xl font-bold text-text-primary">{metrics?.approval_queue ?? 0}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Processing</p>
             </div>
           </div>
-          <h3 className="font-semibold text-text-primary mb-2">Approval Queue</h3>
-          <p className="text-sm text-text-secondary mb-4">Applications ready for final approval decision.</p>
+          <h3 className="font-semibold text-text-primary text-sm mb-1">In Progress</h3>
+          <p className="text-xs text-text-secondary mb-3">Cases in review / approval queues.</p>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-text-muted">
+            <span className="text-[10px] text-text-muted">
               {selectedArea === "approval_queue" ? "Click to hide details" : "Click to view details"}
             </span>
-            <ChevronRight size={16} className={`text-text-muted transition-transform ${selectedArea === "approval_queue" ? "rotate-90" : ""}`} />
+            <ChevronRight size={14} className={`text-text-muted transition-transform ${selectedArea === "approval_queue" ? "rotate-90" : ""}`} />
           </div>
-        </div>
+        </Card>
 
-        {/* All Cases */}
-        <div 
-          className={`card p-6 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+        {/* Approved / Completed */}
+        <Card 
+          variant="interactive"
+          className={`${
             selectedArea === "all_cases" 
               ? "ring-2 ring-success bg-success/5 border-success" 
               : "hover:border-success/30"
           }`}
           onClick={() => setSelectedArea(selectedArea === "all_cases" ? null : "all_cases")}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl bg-success/8 flex items-center justify-center">
-              <BarChart3 size={24} className="text-success" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-success/8 flex items-center justify-center">
+              <CheckCircle2 size={20} className="text-success" />
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-text-primary">{metrics?.pending_review ?? 0}</p>
-              <p className="text-xs text-text-muted">Total</p>
+              <p className="text-xl font-bold text-text-primary">{metrics?.pending_review ?? 0}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Resolved</p>
             </div>
           </div>
-          <h3 className="font-semibold text-text-primary mb-2">All Cases</h3>
-          <p className="text-sm text-text-secondary mb-4">Complete overview of all GIS applications.</p>
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Completed</h3>
+          <p className="text-xs text-text-secondary mb-3">Total cases cleared by GIS.</p>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-text-muted">
+            <span className="text-[10px] text-text-muted">
               {selectedArea === "all_cases" ? "Click to hide details" : "Click to view details"}
             </span>
-            <ChevronRight size={16} className={`text-text-muted transition-transform ${selectedArea === "all_cases" ? "rotate-90" : ""}`} />
+            <ChevronRight size={14} className={`text-text-muted transition-transform ${selectedArea === "all_cases" ? "rotate-90" : ""}`} />
           </div>
-        </div>
+        </Card>
 
-        {/* SLA Alerts */}
-        <div 
-          className={`card p-6 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+        {/* Needs Action / SLA Alerts */}
+        <Card 
+          variant="interactive"
+          className={`${
             selectedArea === "sla_alerts" 
               ? "ring-2 ring-danger bg-danger/5 border-danger" 
               : "hover:border-danger/30"
           }`}
           onClick={() => setSelectedArea(selectedArea === "sla_alerts" ? null : "sla_alerts")}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl bg-danger/8 flex items-center justify-center">
-              <AlertTriangle size={24} className="text-danger" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-danger/8 flex items-center justify-center">
+              <AlertCircle size={20} className="text-danger" />
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-text-primary">{metrics?.sla_breaches ?? 0}</p>
-              <p className="text-xs text-text-muted">Alerts</p>
+              <p className="text-xl font-bold text-text-primary">{metrics?.sla_breaches ?? 0}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Action</p>
             </div>
           </div>
-          <h3 className="font-semibold text-text-primary mb-2">SLA Alerts</h3>
-          <p className="text-sm text-text-secondary mb-4">Applications requiring urgent attention.</p>
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Needs Action</h3>
+          <p className="text-xs text-text-secondary mb-3">Cases breaching SLA or urgent.</p>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-text-muted">
+            <span className="text-[10px] text-text-muted">
               {selectedArea === "sla_alerts" ? "Click to hide details" : "Click to view details"}
             </span>
-            <ChevronRight size={16} className={`text-text-muted transition-transform ${selectedArea === "sla_alerts" ? "rotate-90" : ""}`} />
+            <ChevronRight size={14} className={`text-text-muted transition-transform ${selectedArea === "sla_alerts" ? "rotate-90" : ""}`} />
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* ── Area Details ── */}
       {selectedArea && (
-        <div className="bg-white rounded-2xl border border-border shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="bg-white rounded-xl border border-border shadow-sm">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
             <div>
-              <h2 className="text-base font-bold text-text-primary">
+              <h2 className="text-sm font-bold text-text-primary">
                 {selectedArea === "review_queue" && "Review Queue Details"}
                 {selectedArea === "approval_queue" && "Approval Queue Details"}
                 {selectedArea === "all_cases" && "All Cases"}
                 {selectedArea === "sla_alerts" && "SLA Alerts"}
               </h2>
-              <p className="text-xs text-text-muted mt-0.5">
+              <p className="text-[10px] text-text-muted mt-0.5">
                 {selectedArea === "review_queue" && "Applications waiting for initial review"}
                 {selectedArea === "approval_queue" && "Applications ready for final approval"}
                 {selectedArea === "all_cases" && "Complete overview of all applications"}
@@ -251,24 +257,25 @@ export default function GisDashboard() {
               variant="secondary"
               size="sm"
               onClick={() => router.push(`/dashboard/gis/cases${selectedArea === "review_queue" ? "?queue=review_queue" : selectedArea === "approval_queue" ? "?queue=approval_queue" : selectedArea === "sla_alerts" ? "?sla_breached=true" : ""}`)}
+              className="!text-xs !py-1.5 !px-3"
             >
-              View All <ArrowRight size={13} className="ml-1" />
+              View All <ArrowRight size={12} className="ml-1" />
             </Button>
           </div>
 
           {areaLoading ? (
-            <div className="p-6 space-y-3">
+            <div className="p-5 space-y-2.5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 bg-surface animate-pulse rounded-lg" />
+                <div key={i} className="h-14 bg-surface animate-pulse rounded-lg" />
               ))}
             </div>
           ) : !areaData?.data?.length ? (
-            <div className="text-center py-16">
-              <div className="w-14 h-14 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Inbox size={24} className="text-text-muted" />
+            <div className="text-center py-12">
+              <div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Inbox size={20} className="text-text-muted" />
               </div>
-              <p className="text-text-primary font-semibold mb-1">No cases found</p>
-              <p className="text-sm text-text-muted mb-6 max-w-xs mx-auto">
+              <p className="text-text-primary font-semibold text-sm mb-1">No cases found</p>
+              <p className="text-xs text-text-muted mb-5 max-w-xs mx-auto">
                 {selectedArea === "review_queue" && "No applications in review queue"}
                 {selectedArea === "approval_queue" && "No applications pending approval"}
                 {selectedArea === "all_cases" && "No applications found"}
@@ -286,28 +293,28 @@ export default function GisDashboard() {
                 return (
                   <div
                     key={app.id}
-                    className={`flex items-center gap-4 px-6 py-4 hover:bg-surface/60 transition-colors cursor-pointer group ${isUrgent ? "bg-danger/3" : ""}`}
+                    className={`flex items-center gap-3 px-5 py-3 hover:bg-surface/60 transition-colors cursor-pointer group ${isUrgent ? "bg-danger/3" : ""}`}
                     onClick={() => router.push(`/dashboard/gis/cases/${app.id}`)}
                   >
-                    <div className={`w-10 h-10 rounded-lg ${isUrgent ? "bg-danger/10" : "bg-info/10"} flex items-center justify-center shrink-0`}>
+                    <div className={`w-8 h-8 rounded-lg ${isUrgent ? "bg-danger/10" : "bg-info/10"} flex items-center justify-center shrink-0`}>
                       {isUrgent ? (
-                        <AlertTriangle size={18} className="text-danger" />
+                        <AlertTriangle size={16} className="text-danger" />
                       ) : (
-                        <FileCheck size={18} className="text-info" />
+                        <FileCheck size={16} className="text-info" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-text-primary truncate">{app.reference_number}</p>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-medium text-text-primary truncate">{app.reference_number}</p>
                         <StatusBadge status={app.status} />
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-text-muted">
+                      <div className="flex items-center gap-3 text-[10px] text-text-muted">
                         <span>{app.visa_type?.name}</span>
                         {app.assigned_officer && (
                           <span>{app.assigned_officer.first_name} {app.assigned_officer.last_name}</span>
                         )}
                         {app.current_queue && (
-                          <span className="px-2 py-0.5 rounded-full bg-surface">
+                          <span className="px-1.5 py-0.5 rounded-full bg-surface text-[9px]">
                             {app.current_queue.replace('_', ' ')}
                           </span>
                         )}
@@ -316,7 +323,7 @@ export default function GisDashboard() {
                         )}
                       </div>
                       {app.purpose_of_visit && (
-                        <p className="text-xs text-text-muted mt-1 line-clamp-2">{app.purpose_of_visit}</p>
+                        <p className="text-[10px] text-text-muted mt-0.5 line-clamp-2">{app.purpose_of_visit}</p>
                       )}
                     </div>
                   </div>
@@ -329,34 +336,35 @@ export default function GisDashboard() {
 
       {/* ── Recent Cases (shown when no area selected) ── */}
       {!selectedArea && (
-        <div className="bg-white rounded-2xl border border-border shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="bg-white rounded-xl border border-border shadow-sm">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
             <div>
-              <h2 className="text-base font-bold text-text-primary">Recent Cases</h2>
-              <p className="text-xs text-text-muted mt-0.5">Latest applications in your queue</p>
+              <h2 className="text-sm font-bold text-text-primary">Recent Cases</h2>
+              <p className="text-[10px] text-text-muted mt-0.5">Latest applications in your queue</p>
             </div>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => router.push("/dashboard/gis/cases")}
+              className="!text-xs !py-1.5 !px-3"
             >
-              View All <ArrowRight size={13} className="ml-1" />
+              View All <ArrowRight size={12} className="ml-1" />
             </Button>
           </div>
 
           {isLoading ? (
-            <div className="p-6 space-y-3">
+            <div className="p-5 space-y-2.5">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-14 bg-surface animate-pulse rounded-lg" />
+                <div key={i} className="h-12 bg-surface animate-pulse rounded-lg" />
               ))}
             </div>
           ) : !recentCases?.data?.length ? (
-            <div className="text-center py-16">
-              <div className="w-14 h-14 bg-surface rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Inbox size={24} className="text-text-muted" />
+            <div className="text-center py-12">
+              <div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Inbox size={20} className="text-text-muted" />
               </div>
-              <p className="text-text-primary font-semibold mb-1">No cases yet</p>
-              <p className="text-sm text-text-muted mb-6 max-w-xs mx-auto">
+              <p className="text-text-primary font-semibold text-sm mb-1">No cases yet</p>
+              <p className="text-xs text-text-muted mb-5 max-w-xs mx-auto">
                 Applications assigned to GIS will appear here.
               </p>
             </div>
@@ -371,22 +379,22 @@ export default function GisDashboard() {
                 return (
                   <div
                     key={app.id}
-                    className={`flex items-center gap-4 px-6 py-3.5 hover:bg-surface/60 transition-colors cursor-pointer group ${isUrgent ? "bg-danger/3" : ""}`}
+                    className={`flex items-center gap-3 px-5 py-3 hover:bg-surface/60 transition-colors cursor-pointer group ${isUrgent ? "bg-danger/3" : ""}`}
                     onClick={() => router.push(`/dashboard/gis/cases/${app.id}`)}
                   >
-                    <div className={`w-9 h-9 rounded-lg ${isUrgent ? "bg-danger/10" : "bg-info/10"} flex items-center justify-center shrink-0`}>
+                    <div className={`w-8 h-8 rounded-lg ${isUrgent ? "bg-danger/10" : "bg-info/10"} flex items-center justify-center shrink-0`}>
                       {isUrgent ? (
-                        <AlertTriangle size={16} className="text-danger" />
+                        <AlertTriangle size={14} className="text-danger" />
                       ) : (
-                        <FileCheck size={16} className="text-info" />
+                        <FileCheck size={14} className="text-info" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-medium text-text-primary truncate">{app.reference_number}</p>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <p className="text-xs font-medium text-text-primary truncate">{app.reference_number}</p>
                         <StatusBadge status={app.status} />
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-text-muted">
+                      <div className="flex items-center gap-3 text-[10px] text-text-muted">
                         <span>{app.visa_type?.name}</span>
                         {app.assigned_officer && (
                           <span>{app.assigned_officer.first_name} {app.assigned_officer.last_name}</span>
@@ -405,53 +413,59 @@ export default function GisDashboard() {
       )}
 
       {/* ── Quick Actions ── */}
-      <div className="mt-8">
-        <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">
+      <div className="mt-6">
+        <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2.5">
           Quick Actions
         </h2>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <button
+        <div className="grid sm:grid-cols-3 gap-3">
+          <Card
+            variant="interactive"
+            size="sm"
             onClick={() => router.push("/dashboard/gis/cases?queue=review_queue")}
-            className="card hover:border-accent/30 transition-colors text-left cursor-pointer"
+            className="hover:border-accent/30 text-left"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-info/10 rounded-lg flex items-center justify-center">
-                <FolderOpen size={20} className="text-info" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
+                <FolderOpen size={16} className="text-info" />
               </div>
               <div>
-                <p className="font-semibold text-text-primary text-sm">Review Queue</p>
-                <p className="text-xs text-text-muted">{metrics?.review_queue ?? 0} cases awaiting review</p>
+                <p className="font-semibold text-text-primary text-xs">Review Queue</p>
+                <p className="text-[10px] text-text-muted">{metrics?.review_queue ?? 0} cases awaiting review</p>
               </div>
             </div>
-          </button>
-          <button
+          </Card>
+          <Card
+            variant="interactive"
+            size="sm"
             onClick={() => router.push("/dashboard/gis/cases?queue=approval_queue")}
-            className="card hover:border-accent/30 transition-colors text-left cursor-pointer"
+            className="hover:border-accent/30 text-left"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-                <BadgeCheck size={20} className="text-warning" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+                <BadgeCheck size={16} className="text-warning" />
               </div>
               <div>
-                <p className="font-semibold text-text-primary text-sm">Approval Queue</p>
-                <p className="text-xs text-text-muted">{metrics?.approval_queue ?? 0} pending approval</p>
+                <p className="font-semibold text-text-primary text-xs">Approval Queue</p>
+                <p className="text-[10px] text-text-muted">{metrics?.approval_queue ?? 0} pending approval</p>
               </div>
             </div>
-          </button>
-          <button
+          </Card>
+          <Card
+            variant="interactive"
+            size="sm"
             onClick={() => router.push("/dashboard/gis/sla-alerts")}
-            className="card hover:border-accent/30 transition-colors text-left cursor-pointer"
+            className="hover:border-accent/30 text-left"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-danger/10 rounded-lg flex items-center justify-center">
-                <Shield size={20} className="text-danger" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-danger/10 rounded-lg flex items-center justify-center">
+                <Shield size={16} className="text-danger" />
               </div>
               <div>
-                <p className="font-semibold text-text-primary text-sm">SLA Alerts</p>
-                <p className="text-xs text-text-muted">{metrics?.sla_breaches ?? 0} breaches detected</p>
+                <p className="font-semibold text-text-primary text-xs">SLA Alerts</p>
+                <p className="text-[10px] text-text-muted">{metrics?.sla_breaches ?? 0} breaches detected</p>
               </div>
             </div>
-          </button>
+          </Card>
         </div>
       </div>
     </DashboardShell>

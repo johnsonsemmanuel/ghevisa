@@ -103,10 +103,16 @@ export function DashboardShell({
               <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
                 className="relative p-2 rounded-lg hover:bg-surface transition-colors cursor-pointer"
+                aria-label="View notifications"
+                aria-expanded={notificationsOpen}
+                aria-haspopup="true"
               >
                 <Bell size={20} className="text-text-secondary" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span 
+                    className="absolute top-1 right-1 w-4 h-4 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+                    aria-label={`${unreadCount} unread notifications`}
+                  >
                     {unreadCount}
                   </span>
                 )}

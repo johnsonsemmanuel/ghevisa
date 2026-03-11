@@ -1,436 +1,616 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BorderDecisionModal } from "@/components/ui/border-decision-modal";
-import { TrustNetPanel } from "@/components/ui/trustnet-panel";
-import { PnrFlightPanel } from "@/components/ui/pnr-flight-panel";
-import {
-  QrCode, Search, Shield, CheckCircle2, AlertTriangle, XCircle,
-  Plane, Activity, Scan, MapPin,
-  History, FileText, Settings,
+import { Select } from "@/components/ui/select";
+import { QRScanner } from "@/components/ui/qr-scanner";
+import api from "@/lib/api";
+import toast from "react-hot-toast";
+import { 
+  Shield, Search, CheckCircle2, XCircle, AlertTriangle, 
+  User, FileText, Calendar, Globe, MapPin, Clock, QrCode, AlertCircle as AlertCircleIcon
 } from "lucide-react";
+import { PORTS_OF_ENTRY } from "@/lib/visa-matrix";
+import { countries } from "@/lib/countries";
 
 interface VerificationResult {
-  valid: boolean;
   status: string;
+  authorization_type?: string;
+  traveler_name?: string;
+  passport_number?: string;
+  nationality?: string;
+  valid_until?: string;
+  entry_type?: string;
+  eta_number?: string;
+  visa_reference?: string;
+  taid?: string;
+  message?: string;
+  reason?: string;
+}
+
+interface PassportValidation {
+  valid: boolean;
+  code: string;
   message: string;
-  document?: {
-    type: string;
-    reference_number?: string;
-    eta_number?: string;
-    holder_name: string;
-    nationality: string;
-    passport_number_masked: string;
-    visa_type?: string;
-    entry_type: string;
-    valid_until: string;
-    approved_on?: string;
-  };
-  alerts?: Array<{ type: string; message: string }>;
-  risk_warnings?: string[];
-  previous_entries?: Array<{ port: string; date: string }>;
-  pnr_data?: {
-    pnr_code: string;
-    passenger_name: string;
-    seat_number?: string;
-    booking_class?: string;
-    checked_bags?: number;
-    flight: {
-      flight_number: string;
-      airline: string;
-      departure_airport: string;
-      arrival_airport: string;
-      departure_time: string;
-      arrival_time: string;
-      status: "on_time" | "delayed" | "arrived" | "boarding";
-      passenger_count?: number;
-      gate?: string;
-    };
-    manifest_match: boolean;
-    boarding_status: "not_boarded" | "boarded" | "no_show";
-  };
-  trustnet_data?: {
-    passport_authentic: boolean;
-    mrz_valid: boolean;
-    interpol_clear: boolean;
-    watchlist_clear: boolean;
-    identity_verified: boolean;
-    fraud_indicators: string[];
-    risk_score: number;
-    last_checked: string;
-  };
+  months_remaining?: number;
 }
 
 export default function BorderPortalPage() {
-  const router = useRouter();
-  const [searchType, setSearchType] = useState<"qr" | "manual">("qr");
-  const [qrData, setQrData] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
-  const [referenceNumber, setReferenceNumber] = useState("");
-  const [documentType, setDocumentType] = useState<"evisa" | "eta">("evisa");
-  const [selectedPort, setSelectedPort] = useState("KIA");
-  const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
+  const [nationality, setNationality] = useState("");
+  const [etaNumber, setEtaNumber] = useState("");
+  const [visaId, setVisaId] = useState("");
+  const [portOfEntry, setPortOfEntry] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [decisionModal, setDecisionModal] = useState<{ open: boolean; type: "admit" | "secondary" | "deny" }>({ open: false, type: "admit" });
-  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const [result, setResult] = useState<VerificationResult | null>(null);
+  const [entryConfirmed, setEntryConfirmed] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [passportValidation, setPassportValidation] = useState<PassportValidation | null>(null);
+  const [validatingPassport, setValidatingPassport] = useState(false);
 
-  const { data: stats } = useQuery({
-    queryKey: ["border-stats", selectedPort],
-    queryFn: () => api.get(`/border/statistics?port=${selectedPort}`).then((r) => r.data),
-    refetchInterval: 30000,
-  });
+  // Validate passport when passport number changes
+  useEffect(() => {
+    const validatePassport = async () => {
+      if (!passportNumber || passportNumber.length < 6) {
+        setPassportValidation(null);
+        return;
+      }
+
+      setValidatingPassport(true);
+      try {
+        // Simulate passport expiry date (in real system, this would come from passport scan/database)
+        const futureDate = new Date();
+        futureDate.setMonth(futureDate.getMonth() + 8); // 8 months from now
+
+        const response = await api.post("/passport/verify-test", {
+          passport_number: passportNumber,
+          nationality: nationality || "XX",
+          passport_expiry: futureDate.toISOString().split('T')[0],
+        });
+
+        setPassportValidation(response.data.expiry_check);
+      } catch (error) {
+        console.error("Passport validation error:", error);
+        setPassportValidation(null);
+      } finally {
+        setValidatingPassport(false);
+      }
+    };
+
+    const debounce = setTimeout(validatePassport, 500);
+    return () => clearTimeout(debounce);
+  }, [passportNumber, nationality]);
 
   const handleVerify = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = searchType === "qr"
-        ? await api.post("/border/verify-qr", { qr_data: qrData, port_of_entry: selectedPort, passport_number: passportNumber })
-        : await api.post("/border/verify", { document_type: documentType, reference_number: referenceNumber, passport_number: passportNumber });
-      setVerificationResult(response.data);
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: VerificationResult } };
-      setVerificationResult(e.response?.data || null);
-      if (!e.response?.data) setError("Verification failed");
-    } finally {
-      setLoading(false);
+    if (!passportNumber || !nationality) {
+      toast.error("Passport number and nationality are required");
+      return;
     }
-  };
 
-  const getColor = (r: VerificationResult) => !r.valid ? "red" : (r.alerts?.length || r.risk_warnings?.length) ? "amber" : "green";
+    if (passportValidation && !passportValidation.valid) {
+      toast.error("Cannot verify traveler with expired passport");
+      return;
+    }
 
-  const handleDecision = async (decision: string, reasonCode: string, notes: string) => {
-    if (!verificationResult?.document) return;
     setLoading(true);
-    setError(null);
+    setResult(null);
+    setEntryConfirmed(false);
+
     try {
-      await api.post("/border/crossing", {
-        crossing_type: "entry",
-        port_of_entry: selectedPort,
-        document_type: verificationResult.document.type,
+      const params = new URLSearchParams({
         passport_number: passportNumber,
-        traveler_name: verificationResult.document.holder_name,
-        nationality: verificationResult.document.nationality,
-        verification_status: decision === "admit" ? "valid" : decision === "secondary" ? "secondary_inspection" : "invalid",
-        verification_notes: `[${reasonCode}] ${notes}`.trim(),
-        flight_number: verificationResult.pnr_data?.flight?.flight_number || null,
-        airline: verificationResult.pnr_data?.flight?.airline || null,
+        nationality: nationality.toUpperCase(),
       });
-      setDecisionModal({ open: false, type: "admit" });
-      setVerificationResult(null);
-      setQrData("");
-      setPassportNumber("");
-      setReferenceNumber("");
-      queryClient.invalidateQueries({ queryKey: ["border-stats"] });
-    } catch {
-      setError("Failed to record entry. Please try again.");
+
+      if (etaNumber) params.append("eta_number", etaNumber);
+      if (visaId) params.append("visa_id", visaId);
+
+      const response = await api.get(`/verify-travel?${params.toString()}`);
+      setResult(response.data);
+      
+      if (response.data.status === "AUTHORIZED") {
+        toast.success("Traveler is authorized to enter Ghana");
+      }
+    } catch (error: any) {
+      const errorData = error.response?.data;
+      setResult(errorData || {
+        status: "ERROR",
+        message: "Verification failed. Please try again.",
+      });
+      toast.error(errorData?.message || "Verification failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const metricCards = [
-    {
-      label: "Entries",
-      value: stats?.entries ?? 0,
-      icon: CheckCircle2,
-      wrapperClass: "rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 p-4",
-      iconClass: "text-emerald-600",
-      labelClass: "text-emerald-600",
-    },
-    {
-      label: "Exits",
-      value: stats?.exits ?? 0,
-      icon: Plane,
-      wrapperClass: "rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-4",
-      iconClass: "text-blue-600",
-      labelClass: "text-blue-600",
-    },
-    {
-      label: "Secondary",
-      value: stats?.by_status?.secondary_inspection ?? 0,
-      icon: AlertTriangle,
-      wrapperClass: "rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-4",
-      iconClass: "text-amber-600",
-      labelClass: "text-amber-600",
-    },
-    {
-      label: "Denied",
-      value: stats?.by_status?.invalid ?? 0,
-      icon: XCircle,
-      wrapperClass: "rounded-2xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200 p-4",
-      iconClass: "text-red-600",
-      labelClass: "text-red-600",
-    },
-  ];
+  const handleConfirmEntry = async () => {
+    if (!portOfEntry) {
+      toast.error("Please select port of entry");
+      return;
+    }
+
+    if (!result || result.status !== "AUTHORIZED") {
+      toast.error("Cannot confirm entry for unauthorized traveler");
+      return;
+    }
+
+    setConfirming(true);
+
+    try {
+      await api.post("/verify-travel/confirm-entry", {
+        passport_number: passportNumber,
+        eta_number: etaNumber || undefined,
+        visa_id: visaId || undefined,
+        port_of_entry: portOfEntry,
+      });
+
+      setEntryConfirmed(true);
+      toast.success("Entry confirmed successfully");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to confirm entry");
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const handleReset = () => {
+    setPassportNumber("");
+    setNationality("");
+    setEtaNumber("");
+    setVisaId("");
+    setPortOfEntry("");
+    setResult(null);
+    setEntryConfirmed(false);
+    setPassportValidation(null);
+  };
+
+  const handleScanQR = () => {
+    setShowScanner(true);
+  };
+
+  const handleQRScan = (data: string) => {
+    setShowScanner(false);
+    
+    try {
+      if (data.startsWith("{")) {
+        const parsed = JSON.parse(data);
+        if (parsed.passport_number) setPassportNumber(parsed.passport_number.toUpperCase());
+        if (parsed.nationality) setNationality(parsed.nationality.toUpperCase());
+        if (parsed.eta_number) setEtaNumber(parsed.eta_number.toUpperCase());
+        if (parsed.reference_number) setVisaId(parsed.reference_number.toUpperCase());
+        toast.success("QR code scanned successfully");
+      } else if (data.includes(":")) {
+        const parts = data.split(":");
+        if (parts.length >= 4) {
+          setPassportNumber(parts[2].toUpperCase());
+          setNationality(parts[3].toUpperCase());
+          if (parts[0] === "GHEVISA" || parts[0] === "GH-ETA") {
+            setEtaNumber(parts[1].toUpperCase());
+          }
+          toast.success("QR code scanned successfully");
+        } else {
+          toast.error("Invalid QR code format");
+        }
+      } else {
+        setEtaNumber(data.toUpperCase());
+        toast.success("QR code scanned - please enter passport and nationality");
+      }
+    } catch (error) {
+      console.error("QR parse error:", error);
+      toast.error("Failed to parse QR code data");
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "AUTHORIZED":
+        return "text-success";
+      case "DENIED":
+      case "EXPIRED":
+      case "ETA_ALREADY_USED":
+        return "text-danger";
+      case "ETA_REQUIRED":
+      case "VISA_REQUIRED":
+        return "text-warning";
+      default:
+        return "text-text-muted";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "AUTHORIZED":
+        return <CheckCircle2 size={48} className="text-success" />;
+      case "DENIED":
+      case "EXPIRED":
+      case "ETA_ALREADY_USED":
+        return <XCircle size={48} className="text-danger" />;
+      case "ETA_REQUIRED":
+      case "VISA_REQUIRED":
+        return <AlertTriangle size={48} className="text-warning" />;
+      default:
+        return <AlertTriangle size={48} className="text-text-muted" />;
+    }
+  };
 
   return (
     <DashboardShell
       title="Border Verification Portal"
-      description="Ghana Immigration Service — Entry Point Verification"
-      actions={
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => router.push("/dashboard/border/reports")}>
-            <FileText size={14} className="mr-1" /> Reports
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => router.push("/dashboard/border/operations")}>
-            <Settings size={14} className="mr-1" /> Operations
-          </Button>
-        </div>
-      }
+      description="Verify and process traveler entry at Ghana ports of entry"
     >
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {metricCards.map((card, i) => (
-          <div key={i} className={card.wrapperClass}>
-            <div className="w-10 h-10 bg-white/80 rounded-xl flex items-center justify-center mb-2">
-              <card.icon size={20} className={card.iconClass} />
+      <div className="space-y-4">
+        {/* Compact Header Banner */}
+        <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-accent/5 border border-primary/20 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Shield size={20} className="text-primary" />
             </div>
-            <p className="text-2xl font-bold text-slate-800">{card.value}</p>
-            <p className={`text-sm font-semibold ${card.labelClass}`}>{card.label}</p>
+            <div className="flex-1">
+              <h2 className="text-base font-bold text-text-primary mb-0.5">
+                Ghana Immigration Border Control
+              </h2>
+              <p className="text-xs text-text-secondary">
+                Verify traveler authorization and process entry at ports of entry
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Verification Panel */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-violet-100 to-violet-50 rounded-xl flex items-center justify-center">
-                <Scan size={24} className="text-violet-600" />
+        <div className="grid lg:grid-cols-3 gap-4">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Verification Form */}
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-accent/6 flex items-center justify-center">
+                    <Search size={14} className="text-accent" />
+                  </div>
+                  <h3 className="text-sm font-bold text-text-primary">Traveler Verification</h3>
+                </div>
+
+                <Button variant="secondary" size="sm" onClick={handleScanQR}>
+                  <QrCode size={14} className="mr-1.5" />
+                  Scan QR
+                </Button>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">Traveler Verification</h2>
-                <p className="text-sm text-slate-500">Scan QR or enter details</p>
+
+              <div className="space-y-3">
+                {/* Required Fields */}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text-primary mb-1">Passport Number *</label>
+                    <Input
+                      value={passportNumber}
+                      onChange={(e) => setPassportNumber(e.target.value.toUpperCase())}
+                      placeholder="e.g., P1234567"
+                      disabled={loading}
+                      className="font-mono text-sm h-9"
+                    />
+                    {validatingPassport && (
+                      <p className="text-[11px] text-text-muted mt-1">Validating...</p>
+                    )}
+                    {passportValidation && (
+                      <div className={`flex items-center gap-1 mt-1 text-[11px] ${
+                        passportValidation.valid 
+                          ? passportValidation.code === 'near_expiry' ? 'text-warning' : 'text-success'
+                          : 'text-danger'
+                      }`}>
+                        {passportValidation.valid ? (
+                          passportValidation.code === 'near_expiry' ? (
+                            <><AlertCircleIcon size={12} /> {passportValidation.message}</>
+                          ) : (
+                            <><CheckCircle2 size={12} /> Valid passport</>
+                          )
+                        ) : (
+                          <><XCircle size={12} /> {passportValidation.message}</>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-text-primary mb-1">Nationality *</label>
+                    <Select
+                      value={nationality}
+                      onChange={(e) => setNationality(e.target.value)}
+                      disabled={loading}
+                      className="text-sm h-9"
+                    >
+                      <option value="">Select nationality</option>
+                      {countries.map((country) => (
+                        <option key={country.code} value={country.code}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Optional Fields */}
+                <div className="p-3 rounded-lg bg-surface border border-border">
+                  <p className="text-[11px] font-medium text-text-secondary mb-2">Optional (if available)</p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-text-primary mb-1">ETA Number</label>
+                      <Input
+                        value={etaNumber}
+                        onChange={(e) => setEtaNumber(e.target.value.toUpperCase())}
+                        placeholder="GH-ETA-20260310-XXXX"
+                        disabled={loading}
+                        className="font-mono text-xs h-8"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-text-primary mb-1">Visa Reference</label>
+                      <Input
+                        value={visaId}
+                        onChange={(e) => setVisaId(e.target.value.toUpperCase())}
+                        placeholder="GH-EV-20260310-XXXXXXXX"
+                        disabled={loading}
+                        className="font-mono text-xs h-8"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Port of Entry */}
+                <div>
+                  <label className="block text-xs font-medium text-text-primary mb-1">Port of Entry *</label>
+                  <Select
+                    value={portOfEntry}
+                    onChange={(e) => setPortOfEntry(e.target.value)}
+                    disabled={loading}
+                    className="text-sm h-9"
+                  >
+                    <option value="">Select port of entry</option>
+                    {PORTS_OF_ENTRY.map((port) => (
+                      <option key={port.value} value={port.value}>
+                        {port.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    onClick={handleVerify}
+                    disabled={loading || !passportNumber || !nationality || (passportValidation && !passportValidation.valid)}
+                    size="sm"
+                    className="flex-1"
+                  >
+                    {loading ? (
+                      <>
+                        <Clock size={14} className="mr-1.5 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <Search size={14} className="mr-1.5" />
+                        Verify Traveler
+                      </>
+                    )}
+                  </Button>
+
+                  {result && (
+                    <Button variant="secondary" size="sm" onClick={handleReset}>
+                      New
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-4 mb-6">
-              {["qr", "manual"].map((t) => (
-                <button key={t} onClick={() => setSearchType(t as "qr" | "manual")}
-                  className={`flex-1 p-4 rounded-xl border-2 font-semibold transition-colors duration-150 ease-out ${searchType === t ? "border-violet-500 bg-violet-50 text-violet-700" : "border-slate-200 hover:border-slate-300"}`}>
-                  {t === "qr" ? <><QrCode size={18} className="inline mr-2" />QR Scan</> : <><Search size={18} className="inline mr-2" />Manual</>}
-                </button>
-              ))}
-            </div>
+            {/* Verification Result */}
+            {result && (
+              <div className="card p-4">
+                <div className="text-center mb-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-surface mb-3">
+                    {getStatusIcon(result.status)}
+                  </div>
+                  <h3 className={`text-xl font-bold mb-1 ${getStatusColor(result.status)}`}>
+                    {result.status.replace(/_/g, " ")}
+                  </h3>
+                  <p className="text-xs text-text-secondary">{result.message}</p>
+                </div>
 
-            {searchType === "qr" ? (
-              <div className="space-y-4">
-                <Input placeholder="Scan QR code..." value={qrData} onChange={(e) => setQrData(e.target.value)} />
-                <Input placeholder="Passport number..." value={passportNumber} onChange={(e) => setPassportNumber(e.target.value)} />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <select value={documentType} onChange={(e) => setDocumentType(e.target.value as "evisa" | "eta")} className="w-full p-4 rounded-xl border transition-colors duration-150 ease-out focus:border-accent">
-                  <option value="evisa">eVisa</option>
-                  <option value="eta">ETA</option>
-                </select>
-                <Input placeholder="Reference number..." value={referenceNumber} onChange={(e) => setReferenceNumber(e.target.value)} />
-                <Input placeholder="Passport number..." value={passportNumber} onChange={(e) => setPassportNumber(e.target.value)} />
+                {result.status === "AUTHORIZED" && !entryConfirmed && (
+                  <div className="space-y-3">
+                    {/* Traveler Details */}
+                    <div className="p-3 rounded-lg bg-success/5 border border-success/20">
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <div className="flex items-start gap-2">
+                          <User size={16} className="text-success mt-0.5" />
+                          <div>
+                            <p className="text-[11px] text-text-muted">Traveler Name</p>
+                            <p className="text-xs font-semibold text-text-primary">{result.traveler_name}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2">
+                          <FileText size={16} className="text-success mt-0.5" />
+                          <div>
+                            <p className="text-[11px] text-text-muted">Passport Number</p>
+                            <p className="text-xs font-mono font-semibold text-text-primary">{result.passport_number}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2">
+                          <Globe size={16} className="text-success mt-0.5" />
+                          <div>
+                            <p className="text-[11px] text-text-muted">Nationality</p>
+                            <p className="text-xs font-semibold text-text-primary">{result.nationality}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2">
+                          <Calendar size={16} className="text-success mt-0.5" />
+                          <div>
+                            <p className="text-[11px] text-text-muted">Valid Until</p>
+                            <p className="text-xs font-semibold text-text-primary">{result.valid_until}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Authorization Details */}
+                    <div className="p-3 rounded-lg bg-surface border border-border">
+                      <div className="grid sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <p className="text-[11px] text-text-muted mb-0.5">Authorization Type</p>
+                          <p className="font-semibold text-text-primary">{result.authorization_type}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-[11px] text-text-muted mb-0.5">Entry Type</p>
+                          <p className="font-semibold text-text-primary capitalize">{result.entry_type}</p>
+                        </div>
+
+                        {result.eta_number && (
+                          <div>
+                            <p className="text-[11px] text-text-muted mb-0.5">ETA Number</p>
+                            <p className="font-mono font-semibold text-text-primary">{result.eta_number}</p>
+                          </div>
+                        )}
+
+                        {result.visa_reference && (
+                          <div>
+                            <p className="text-[11px] text-text-muted mb-0.5">Visa Reference</p>
+                            <p className="font-mono font-semibold text-text-primary">{result.visa_reference}</p>
+                          </div>
+                        )}
+
+                        {result.taid && (
+                          <div>
+                            <p className="text-[11px] text-text-muted mb-0.5">TAID</p>
+                            <p className="font-mono font-semibold text-text-primary">{result.taid}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Entry Confirmation */}
+                    <div className="p-3 rounded-lg bg-primary/5 border-2 border-primary/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <MapPin size={18} className="text-primary" />
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-text-primary">Confirm Entry</p>
+                          <p className="text-[11px] text-text-muted">Process traveler entry at {portOfEntry || "selected port"}</p>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={handleConfirmEntry}
+                        disabled={confirming || !portOfEntry}
+                        size="sm"
+                        className="w-full !bg-success hover:!bg-success/90"
+                      >
+                        {confirming ? (
+                          <>
+                            <Clock size={14} className="mr-1.5 animate-spin" />
+                            Confirming...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={14} className="mr-1.5" />
+                            Confirm Entry
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {entryConfirmed && (
+                  <div className="p-4 rounded-lg bg-success/10 border border-success/30 text-center">
+                    <CheckCircle2 size={28} className="text-success mx-auto mb-2" />
+                    <p className="text-base font-bold text-success mb-1">ENTRY CONFIRMED</p>
+                    <p className="text-xs text-text-secondary mb-3">
+                      Traveler entry recorded at {portOfEntry}
+                    </p>
+                    <div className="p-2 rounded-lg bg-white border border-border text-left">
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                          <p className="text-text-muted">Entry Date</p>
+                          <p className="font-semibold text-text-primary">{new Date().toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-text-muted">Entry Time</p>
+                          <p className="font-semibold text-text-primary">{new Date().toLocaleTimeString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-text-muted">Port of Entry</p>
+                          <p className="font-semibold text-text-primary">{portOfEntry}</p>
+                        </div>
+                        <div>
+                          <p className="text-text-muted">Authorization</p>
+                          <p className="font-semibold text-text-primary">{result.authorization_type}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {result.status !== "AUTHORIZED" && (
+                  <div className="p-3 rounded-lg bg-danger/5 border border-danger/20 text-center">
+                    <XCircle size={20} className="text-danger mx-auto mb-1" />
+                    <p className="text-xs font-bold text-danger">ENTRY DENIED</p>
+                    <p className="text-[11px] text-text-muted mt-1">
+                      {result.reason === "ETA_REQUIRED" && "Traveler must obtain an ETA before entry"}
+                      {result.reason === "VISA_REQUIRED" && "Traveler must obtain a visa before entry"}
+                      {result.reason === "AUTHORIZATION_EXPIRED" && "Travel authorization has expired"}
+                      {result.reason === "ETA_ALREADY_USED" && "ETA has already been used for entry"}
+                      {!result.reason && "Travel authorization not found or invalid"}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
-
-            {error && <div className="mt-4 p-4 rounded-xl bg-red-50 text-red-700">{error}</div>}
-            <Button className="w-full mt-6" size="lg" onClick={handleVerify} loading={loading}><Shield size={20} className="mr-2" />Verify</Button>
           </div>
 
-          {/* Result */}
-          {verificationResult && (
-            <div className={`bg-white rounded-2xl border-2 shadow-lg overflow-hidden ${getColor(verificationResult) === "green" ? "border-emerald-300" : getColor(verificationResult) === "amber" ? "border-amber-300" : "border-red-300"}`}>
-              <div className={`p-6 ${getColor(verificationResult) === "green" ? "bg-emerald-500" : getColor(verificationResult) === "amber" ? "bg-amber-500" : "bg-red-500"}`}>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
-                    {getColor(verificationResult) === "green" ? <CheckCircle2 size={32} className="text-white" /> : getColor(verificationResult) === "amber" ? <AlertTriangle size={32} className="text-white" /> : <XCircle size={32} className="text-white" />}
-                  </div>
-                  <div>
-                    <p className="text-white/80 text-sm">Result</p>
-                    <p className="text-white text-2xl font-bold">{getColor(verificationResult).toUpperCase()}</p>
-                  </div>
-                </div>
-              </div>
-              {verificationResult.document && (
-                <div className="p-6">
-                  {/* Fast View Card */}
-                  <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                    {[
-                      ["Name", verificationResult.document.holder_name],
-                      ["Nationality", verificationResult.document.nationality],
-                      ["Passport", verificationResult.document.passport_number_masked],
-                      ["Document Type", verificationResult.document.type.toUpperCase()],
-                      ["Valid Until", verificationResult.document.valid_until],
-                      ["Entry Type", verificationResult.document.entry_type],
-                    ].map(([l, v]) => (
-                      <div key={l} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                        <p className="text-xs text-slate-500">{l}</p>
-                        <p className="font-bold text-slate-800">{v}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* TrustNET & PNR Panels */}
-                  <div className="grid md:grid-cols-2 gap-4 mb-6">
-                    <TrustNetPanel data={verificationResult.trustnet_data} compact />
-                    <PnrFlightPanel data={verificationResult.pnr_data} compact />
-                  </div>
-
-                  {/* Alerts Section */}
-                  {(verificationResult.alerts && verificationResult.alerts.length > 0) && (
-                    <div className="mb-6 p-4 rounded-xl bg-red-50 border-2 border-red-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <AlertTriangle size={18} className="text-red-600" />
-                        <span className="font-bold text-red-700">ALERTS ({verificationResult.alerts.length})</span>
-                      </div>
-                      <div className="space-y-2">
-                        {verificationResult.alerts.map((alert, i) => (
-                          <div key={i} className="p-3 rounded-lg bg-red-100 text-red-700 text-sm font-medium">
-                            {alert.message}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Previous Entries */}
-                  {verificationResult.previous_entries && verificationResult.previous_entries.length > 0 && (
-                    <div className="mb-6">
-                      <div className="flex items-center gap-2 mb-2">
-                        <History size={16} className="text-slate-500" />
-                        <span className="text-sm font-semibold text-slate-700">Previous Entries</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {verificationResult.previous_entries.map((entry, i) => (
-                          <span key={i} className="px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
-                            {entry.port} • {entry.date}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-4 pt-4 border-t border-slate-200">
-                    <Button className="flex-1 !bg-emerald-600 hover:!bg-emerald-700" size="lg" onClick={() => setDecisionModal({ open: true, type: "admit" })}>
-                      <CheckCircle2 size={18} className="mr-2" />Admit Entry
-                    </Button>
-                    <Button className="flex-1 !bg-amber-600 hover:!bg-amber-700" size="lg" onClick={() => setDecisionModal({ open: true, type: "secondary" })}>
-                      <AlertTriangle size={18} className="mr-2" />Secondary
-                    </Button>
-                    <Button variant="danger" className="flex-1" size="lg" onClick={() => setDecisionModal({ open: true, type: "deny" })}>
-                      <XCircle size={18} className="mr-2" />Deny Entry
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Port Info */}
-          <div className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl p-6 text-white shadow-lg">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin size={24} className="text-white/80" />
-              <h3 className="text-lg font-bold">Current Port</h3>
-            </div>
-            <p className="text-xl font-bold mb-2">
-              {selectedPort === "KIA" ? "Kotoka Int'l Airport" :
-                selectedPort === "ACC" ? "Tema Port" :
-                  selectedPort === "TKD" ? "Takoradi Port" :
-                    selectedPort === "AFL" ? "Aflao Border" :
-                      selectedPort === "ELB" ? "Elubo Border" : selectedPort}
-            </p>
-            <div className="flex items-center gap-2 text-white/70 text-sm">
-              <Activity size={14} />
-              <span>Online • Active</span>
-            </div>
-            <div className="mt-4 pt-4 border-t border-white/20">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full !bg-white/20 !text-white hover:!bg-white/30"
-                onClick={() => router.push("/dashboard/border/operations")}
-              >
-                <Settings size={14} className="mr-2" />
-                Supervisor Dashboard
-              </Button>
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-xl flex items-center justify-center">
-                <Activity size={20} className="text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">Today&apos;s Stats</h3>
-                <p className="text-xs text-slate-500">Your shift summary</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-600" />
-                  <span className="text-sm font-medium text-slate-700">Admitted</span>
-                </div>
-                <span className="text-lg font-bold text-emerald-600">{stats?.entries ?? 0}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle size={16} className="text-amber-600" />
-                  <span className="text-sm font-medium text-slate-700">Secondary</span>
-                </div>
-                <span className="text-lg font-bold text-amber-600">{stats?.by_status?.secondary_inspection ?? 0}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-red-50 border border-red-100">
-                <div className="flex items-center gap-2">
-                  <XCircle size={16} className="text-red-600" />
-                  <span className="text-sm font-medium text-slate-700">Denied</span>
-                </div>
-                <span className="text-lg font-bold text-red-600">{stats?.by_status?.invalid ?? 0}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <FileText size={18} className="text-slate-400" />
-              Quick Actions
-            </h3>
-            <div className="space-y-2">
-              <Button variant="secondary" size="sm" className="w-full justify-start">
-                <History size={14} className="mr-2" /> View Entry Log
-              </Button>
-              <Button variant="secondary" size="sm" className="w-full justify-start">
-                <Shield size={14} className="mr-2" /> Watchlist Alerts
-              </Button>
-              <Button variant="secondary" size="sm" className="w-full justify-start">
-                <Plane size={14} className="mr-2" /> Flight Manifest
-              </Button>
+          {/* Right Sidebar */}
+          <div className="space-y-4">
+            <div className="card p-4 bg-surface">
+              <h4 className="text-xs font-bold text-text-primary mb-2">Border Control Guidelines</h4>
+              <ul className="space-y-1.5 text-xs text-text-secondary">
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>Verify all travelers before allowing entry</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>Scan QR codes from ETA PDFs for faster verification</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>Passport validation checks expiry automatically</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>Confirm entry to consume single-entry ETAs</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>All actions are logged for security</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Decision Modal */}
-      <BorderDecisionModal
-        isOpen={decisionModal.open}
-        onClose={() => setDecisionModal({ open: false, type: "admit" })}
-        onSubmit={handleDecision}
-        decisionType={decisionModal.type}
-        travelerName={verificationResult?.document?.holder_name || "Unknown Traveler"}
-        loading={loading}
-      />
+      {/* QR Scanner Modal */}
+      {showScanner && (
+        <QRScanner
+          onScan={handleQRScan}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </DashboardShell>
   );
 }

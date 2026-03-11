@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { PaymentModal } from "@/components/ui/payment-modal";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, CreditCard, FileText, User, Clock, CheckCircle,
@@ -15,6 +14,27 @@ import toast from "react-hot-toast";
 import type { Application } from "@/lib/types";
 import { useState, useMemo } from "react";
 
+const PAYMENT_METHODS = [
+  {
+    id: "paystack_card",
+    label: "Card",
+    desc: "Visa, Mastercard",
+    icon: <CreditCard size={16} className="text-accent" />,
+  },
+  {
+    id: "paystack_mobile_money",
+    label: "Mobile Money",
+    desc: "MTN, Vodafone, AirtelTigo",
+    icon: <Wallet size={16} className="text-accent" />,
+  },
+  {
+    id: "gcb_payment",
+    label: "GCB Bank",
+    desc: "Ghana Commercial Bank",
+    icon: <Shield size={16} className="text-accent" />,
+  },
+];
+
 export default function ApplicationPaymentPage() {
   const params = useParams();
   const router = useRouter();
@@ -22,6 +42,8 @@ export default function ApplicationPaymentPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<"USD" | "GHS">("USD");
+  const [selectedMethod, setSelectedMethod] = useState("paystack_card");
+  const [agreed, setAgreed] = useState(false);
 
   // Exchange rate: 1 USD = 12.5 GHS
   const exchangeRate = 12.5;
@@ -219,21 +241,41 @@ export default function ApplicationPaymentPage() {
           </div>
         </div>
 
-        {/* Currency Selection */}
-        <div className="card mb-6">
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-primary/6 flex items-center justify-center">
-              <CreditCard size={16} className="text-primary" />
+        {/* Compact Review & Pay (same style as new application flow) */}
+        <div className="card mb-6 space-y-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-accent/6 flex items-center justify-center">
+              <CreditCard size={16} className="text-accent" />
             </div>
-            <h2 className="text-base font-bold text-text-primary">Select Currency</h2>
+            <h2 className="text-base font-bold text-text-primary">Review &amp; Pay</h2>
           </div>
 
+          {/* Fee Summary */}
+          <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-xs text-text-secondary">
+                  {`${application.visa_type?.name || "Visa"} (${application.entry_type === "multiple" ? "Multiple" : "Single"})`}
+                </p>
+                {fees.processing > 0 && (
+                  <p className="text-xs text-text-muted">
+                    + {application.service_tier?.name} processing
+                  </p>
+                )}
+              </div>
+              <p className="text-xl font-bold text-accent">
+                {getCurrencySymbol()}{getDisplayAmount().toFixed(2)}
+              </p>
+            </div>
+          </div>
+
+          {/* Currency Selection (compact) */}
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setSelectedCurrency("USD")}
               disabled={processing}
-              className={`p-4 rounded-xl border-2 transition-all ${
+              className={`p-3 rounded-xl border-2 text-sm transition-all ${
                 selectedCurrency === "USD"
                   ? "border-accent bg-accent/5"
                   : "border-border hover:border-accent/30"
@@ -241,14 +283,14 @@ export default function ApplicationPaymentPage() {
             >
               <div className="text-center">
                 <p className="font-semibold text-text-primary">USD ($)</p>
-                <p className="text-xs text-text-muted mt-1">US Dollar</p>
+                <p className="text-[11px] text-text-muted mt-0.5">International</p>
               </div>
             </button>
             <button
               type="button"
               onClick={() => setSelectedCurrency("GHS")}
               disabled={processing}
-              className={`p-4 rounded-xl border-2 transition-all ${
+              className={`p-3 rounded-xl border-2 text-sm transition-all ${
                 selectedCurrency === "GHS"
                   ? "border-accent bg-accent/5"
                   : "border-border hover:border-accent/30"
@@ -256,93 +298,83 @@ export default function ApplicationPaymentPage() {
             >
               <div className="text-center">
                 <p className="font-semibold text-text-primary">GHS (₵)</p>
-                <p className="text-xs text-text-muted mt-1">Ghana Cedi</p>
+                <p className="text-[11px] text-text-muted mt-0.5">Local</p>
               </div>
             </button>
           </div>
-
           {selectedCurrency === "GHS" && (
-            <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20">
-              <p className="text-xs text-info">
-                <strong>Exchange Rate:</strong> $1 = GH₵{exchangeRate.toFixed(2)}
-              </p>
-            </div>
+            <p className="text-[11px] text-info">
+              <strong>Rate:</strong> $1 = GH₵{exchangeRate.toFixed(2)}
+            </p>
           )}
-        </div>
 
-        {/* Payment Details */}
-        <div className="card mb-6">
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-accent/6 flex items-center justify-center">
-              <CreditCard size={16} className="text-accent" />
-            </div>
-            <h2 className="text-base font-bold text-text-primary">Payment Details</h2>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-text-secondary">Base Fee ({application.entry_type === "multiple" ? "Multiple" : "Single"} Entry)</span>
-              <span className="text-sm font-medium text-text-primary">
-                {getCurrencySymbol()}{(fees.base * (selectedCurrency === "GHS" ? exchangeRate : 1)).toFixed(2)}
-              </span>
-            </div>
-            {fees.processing > 0 && (
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-text-secondary">Processing Fee ({application.service_tier?.name})</span>
-                <span className="text-sm font-medium text-text-primary">
-                  {getCurrencySymbol()}{(fees.processing * (selectedCurrency === "GHS" ? exchangeRate : 1)).toFixed(2)}
-                </span>
-              </div>
-            )}
-            <div className="border-t border-border pt-3 flex items-center justify-between">
-              <span className="font-semibold text-text-primary">Total Amount</span>
-              <span className="text-2xl font-bold text-accent">
-                {getCurrencySymbol()}{getDisplayAmount().toFixed(2)}
-              </span>
+          {/* Payment Method Selection */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-text-secondary">Payment Method</p>
+            <div className="grid grid-cols-3 gap-2">
+              {PAYMENT_METHODS.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setSelectedMethod(m.id)}
+                  disabled={processing}
+                  className={`flex flex-col items-center gap-2 p-2.5 rounded-lg border-2 text-center text-xs transition-all ${
+                    selectedMethod === m.id
+                      ? "border-accent bg-accent/5"
+                      : "border-border hover:border-accent/30"
+                  } ${processing ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {m.icon}
+                  <span className="font-medium text-text-primary">{m.label}</span>
+                  <span className="text-[10px] text-text-muted">{m.desc}</span>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Security Notice */}
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-surface border border-border mb-6">
-          <Shield size={20} className="text-primary shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-text-primary">Secure Payment</p>
-            <p className="text-xs text-text-muted mt-0.5">
-              Your payment is secured with 256-bit SSL encryption. All transactions are processed through trusted payment gateways.
+          {/* Terms */}
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              disabled={processing}
+              className="mt-0.5 w-4 h-4 rounded text-accent"
+            />
+            <span className="text-xs text-text-secondary leading-relaxed">
+              I confirm all information is accurate. I understand the visa fee is non-refundable once processing begins.
+            </span>
+          </label>
+
+          {/* Security Notice */}
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border">
+            <Shield size={16} className="text-primary shrink-0" />
+            <p className="text-xs text-text-muted">
+              Your payment is secured with 256-bit SSL encryption and processed via trusted gateways.
             </p>
           </div>
-        </div>
 
-        {/* Payment Button */}
-        <div className="flex justify-center">
-          <Button
-            size="lg"
-            leftIcon={<CreditCard size={18} />}
-            onClick={() => setShowPaymentModal(true)}
-            disabled={processing}
-            className="!bg-accent hover:!bg-accent-dark min-w-[280px]"
-          >
-            Proceed to Payment ({getCurrencySymbol()}{getDisplayAmount().toFixed(2)})
-          </Button>
+          {/* Pay Button */}
+          <div className="flex justify-end">
+            <Button
+              onClick={() => handlePay(`${selectedMethod}|${selectedCurrency}`)}
+              disabled={processing || !agreed}
+              className="!bg-accent hover:!bg-accent-dark min-w-[220px]"
+            >
+              {processing ? (
+                <>
+                  <Clock size={16} className="mr-1.5 animate-spin" /> Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard size={16} className="mr-1.5" />
+                  Pay {getCurrencySymbol()}{getDisplayAmount().toFixed(2)}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
-
-      {/* Payment Modal */}
-      <PaymentModal
-        open={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        onPay={handlePay}
-        totalFee={fees.total}
-        currency={selectedCurrency}
-        breakdown={[
-          { label: `Base Fee (${application.entry_type === "multiple" ? "Multiple" : "Single"} Entry)`, amount: fees.base },
-          ...(fees.processing > 0 ? [{ label: "Processing Fee", amount: fees.processing }] : []),
-        ]}
-        visaTypeName={application.visa_type?.name || "Visa"}
-        applicantName={`${application.first_name} ${application.last_name}`}
-        referenceNumber={application.reference_number}
-      />
     </DashboardShell>
   );
 }

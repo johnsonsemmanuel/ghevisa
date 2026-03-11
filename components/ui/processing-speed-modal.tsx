@@ -19,6 +19,7 @@ const tierIcons: Record<string, React.ReactNode> = {
   standard: <Clock size={20} className="text-text-muted" />,
   fast_track: <TrendingUp size={20} className="text-warning" />,
   express: <Crown size={20} className="text-accent" />,
+  ultra_express: <Crown size={20} className="text-danger" />, // Add ultra-express icon
 };
 
 const tierIconBg: Record<string, string> = {
@@ -39,6 +40,7 @@ const tierFeatures: Record<string, string[]> = {
   standard: ["Email notifications", "3-5 business days"],
   fast_track: ["Priority queue", "24-48 hours"],
   express: ["Dedicated officer", "Same day"],
+  ultra_express: ["Highest priority", "4-6 hours"],
 };
 
 export function ProcessingSpeedModal({

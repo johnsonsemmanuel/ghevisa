@@ -66,10 +66,10 @@ const tierMeta: Record<string, { icon: React.ReactNode; bg: string; ring: string
 
 const DOC_TYPES = [
   { key: "passport_bio", label: "Passport bio-data page" },
-  { key: "passport_photo", label: "Passport photograph" },
+  // Backend eVisa types use `photo` (ETA uses `passport_photo`)
+  { key: "photo", label: "Passport photograph" },
   { key: "proof_of_accommodation", label: "Proof of accommodation" },
   { key: "return_ticket", label: "Return ticket" },
-  { key: "proof_of_funds", label: "Proof of funds" },
 ];
 const ETA_DOC_TYPES = [
   { key: "passport_bio", label: "Passport bio-data page" },
@@ -77,10 +77,15 @@ const ETA_DOC_TYPES = [
 ];
 const BUSINESS_DOC_TYPES = [
   { key: "passport_bio", label: "Passport bio-data page" },
-  { key: "passport_photo", label: "Passport photograph" },
+  { key: "photo", label: "Passport photograph" },
   { key: "invitation_letter", label: "Invitation letter" },
   { key: "company_letter", label: "Company letter" },
-  { key: "proof_of_funds", label: "Proof of funds" },
+];
+
+const OPTIONAL_DOC_TYPES = [
+  { key: "travel_insurance", label: "Travel insurance" },
+  { key: "yellow_fever_certificate", label: "Yellow fever certificate" },
+  { key: "other_supporting_documents", label: "Other supporting documents" },
 ];
 
 const PURPOSE_OPTIONS = [
@@ -195,6 +200,8 @@ export default function NewApplicationPage() {
     // Travel History
     visited_ghana_before: "", previous_visa_number: "", visited_other_countries: "",
     visited_country_1: "", visited_country_2: "", visited_country_3: "",
+    // Health Declaration
+    health_infectious_travel: "", health_infectious_countries: "",
     // Security & Travel Declaration
     high_risk_travel: "", entry_denied_before: "", overstayed_before: "", international_sanctions: "",
     criminal_conviction: "", 
@@ -274,7 +281,8 @@ export default function NewApplicationPage() {
   const isEta = form.authorization_type === "eta";
   const isBusiness = selVT?.slug === "business";
   const STEPS = isEta ? ETA_STEPS : EVISA_STEPS;
-  const currentDocTypes = isEta ? ETA_DOC_TYPES : isBusiness ? BUSINESS_DOC_TYPES : DOC_TYPES;
+  const requiredDocTypes = isEta ? ETA_DOC_TYPES : isBusiness ? BUSINESS_DOC_TYPES : DOC_TYPES;
+  const optionalDocTypes = OPTIONAL_DOC_TYPES;
 
   /* ── Passport validation ─────────────────────────── */
   const passportStatus = useMemo(() => {
@@ -312,7 +320,8 @@ export default function NewApplicationPage() {
   /* ── Auto-select online visa channel ───────────────── */
   useEffect(() => {
     if (!form.visa_channel) {
-      set("visa_channel", "online");
+      // Backend expects "e-visa" or "regular" for visa_channel
+      set("visa_channel", "e-visa");
     }
   }, [form.visa_channel, set]);
 
@@ -352,7 +361,7 @@ export default function NewApplicationPage() {
       if (isValid) {
         setPassportVerificationMsg("✓ Passport number verified successfully");
       } else {
-        setPassportVerificationMsg("⚠ Invalid format. Use format: Letter + 7-9 digits (e.g., A1234567)");
+        setPassportVerificationMsg("Invalid format. Use format: Letter + 7-9 digits (e.g., A1234567)");
       }
     }, 2400);
 
@@ -378,34 +387,182 @@ export default function NewApplicationPage() {
 
   /* ── Validation ──────────────────────────────────── */
   const canNext = useCallback((s: number): boolean => {
+    const hasAllDocs = () => requiredDocTypes.every(d => !!docs[d.key]);
+
     if (isEta) {
       switch (s) {
         case 0: return !!form.visa_channel;
-        case 1: return !!form.first_name && !!form.last_name && !!form.date_of_birth && !!form.nationality && !!form.passport_number && !!form.passport_issue_date && !!form.passport_expiry && !passportExpired;
-        case 2: return !!form.email && !emailError && (!form.phone || !phoneError);
-        case 3: return !!form.intended_arrival && !!form.duration_days && !!form.address_in_ghana && !!form.port_of_entry;
-        case 4: return true;
-        case 5: return true;
-        case 6: return true;
+        case 1: {
+          // Applicant Details - All required fields
+          const checks = {
+            first_name: !!form.first_name,
+            last_name: !!form.last_name,
+            date_of_birth: !!form.date_of_birth,
+            gender: !!form.gender,
+            country_of_birth: !!form.country_of_birth,
+            nationality: !!form.nationality,
+            marital_status: !!form.marital_status,
+            profession: !!form.profession,
+            passport_number: !!form.passport_number,
+            passport_issue_date: !!form.passport_issue_date,
+            passport_expiry: !!form.passport_expiry,
+            passportNotExpired: !passportExpired
+          };
+          
+          const allValid = Object.values(checks).every(v => v);
+          
+          // Debug: log missing fields
+          if (!allValid) {
+            const missing = Object.entries(checks).filter(([_, v]) => !v).map(([k]) => k);
+            console.log('Missing required fields:', missing);
+          }
+          
+          return allValid;
+        }
+        case 2: {
+          // Contact Info - Email + phone required
+          if (!form.phone) {
+            setPhoneError("Phone number is required");
+            return false;
+          }
+          return !!form.email && !emailError && !!form.phone && !phoneError;
+        }
+        case 3: {
+          // Travel Details - All required fields
+          const baseValid = !!form.intended_arrival && 
+                           !!form.duration_days && 
+                           !!form.address_in_ghana && 
+                           !!form.port_of_entry &&
+                           !!form.visited_ghana_before &&
+                           !!form.visited_other_countries &&
+                           !!form.purpose_of_visit;
+          
+          // If visited other countries, require 3 countries
+          if (form.visited_other_countries === "yes") {
+            return baseValid && !!form.visited_country_1 && !!form.visited_country_2 && !!form.visited_country_3;
+          }
+          return baseValid;
+        }
+        case 4: {
+          // Accommodation - Check based on type
+          if (!form.accommodation_type) return false;
+          
+          if (form.accommodation_type === "hotel") {
+            return !!form.hotel_name && !!form.accommodation_address;
+          } else if (form.accommodation_type === "family") {
+            return !!form.host_name && !!form.host_phone && !!form.host_address;
+          }
+          return true;
+        }
+        case 5: return hasAllDocs();
+        case 6: {
+          // Declarations - Health and Security
+          const healthValid = !!form.health_infectious_travel;
+          const securityValid = !!form.high_risk_travel && 
+                               !!form.entry_denied_before && 
+                               !!form.overstayed_before && 
+                               !!form.international_sanctions;
+          
+          // If travelled to infectious areas, require countries list
+          if (form.health_infectious_travel === "yes") {
+            return healthValid && securityValid && !!form.health_infectious_countries;
+          }
+          return healthValid && securityValid;
+        }
         case 7: return agreedToTerms;
         default: return true;
       }
     }
+    
+    // Regular eVisa flow
     switch (s) {
       case 0: return !!form.visa_channel;
       case 1: return !!form.visa_type_id;
       case 2: return !!form.entry_type;
       case 3: return !!form.service_tier_id;
-      case 4: return !!form.first_name && !!form.last_name && !!form.date_of_birth && !!form.nationality && !!form.passport_number && !!form.passport_issue_date && !!form.passport_expiry && !passportExpired;
-      case 5: return !!form.email && !emailError && (!form.phone || !phoneError);
-      case 6: return !!form.intended_arrival && !!form.duration_days && !!form.address_in_ghana && !!form.port_of_entry;
-      case 7: return true;
-      case 8: return true;
-      case 9: return true;
+      case 4: {
+        // Applicant Details - All required fields
+        const checks = {
+          first_name: !!form.first_name,
+          last_name: !!form.last_name,
+          date_of_birth: !!form.date_of_birth,
+          gender: !!form.gender,
+          country_of_birth: !!form.country_of_birth,
+          nationality: !!form.nationality,
+          marital_status: !!form.marital_status,
+          profession: !!form.profession,
+          passport_number: !!form.passport_number,
+          passport_issue_date: !!form.passport_issue_date,
+          passport_expiry: !!form.passport_expiry,
+          passportNotExpired: !passportExpired
+        };
+        
+        const allValid = Object.values(checks).every(v => v);
+        
+        // Debug: log missing fields
+        if (!allValid) {
+          const missing = Object.entries(checks).filter(([_, v]) => !v).map(([k]) => k);
+          console.log('Missing required fields (Regular eVisa):', missing);
+        }
+        
+        return allValid;
+      }
+      case 5: {
+        // Contact Info - Email + phone required
+        if (!form.phone) {
+          setPhoneError("Phone number is required");
+          return false;
+        }
+        return !!form.email && !emailError && !!form.phone && !phoneError;
+      }
+      case 6: {
+        // Travel Details - All required fields
+        const baseValid = !!form.intended_arrival && 
+                         !!form.duration_days && 
+                         !!form.place_of_embarkation &&
+                         !!form.port_of_entry &&
+                         !!form.destination_city &&
+                         !!form.address_in_ghana && 
+                         !!form.visited_ghana_before &&
+                         !!form.visited_other_countries &&
+                         !!form.purpose_of_visit;
+        
+        // If visited other countries, require 3 countries
+        if (form.visited_other_countries === "yes") {
+          return baseValid && !!form.visited_country_1 && !!form.visited_country_2 && !!form.visited_country_3;
+        }
+        return baseValid;
+      }
+      case 7: {
+        // Accommodation - Check based on type
+        if (!form.accommodation_type) return false;
+        
+        if (form.accommodation_type === "hotel") {
+          return !!form.hotel_name && !!form.booking_reference && !!form.accommodation_address;
+        } else if (form.accommodation_type === "family") {
+          return !!form.host_name && !!form.host_phone && !!form.host_address && !!form.host_relationship;
+        }
+        return true;
+      }
+      case 8: return hasAllDocs();
+      case 9: {
+        // Declarations - Health and Security
+        const healthValid = !!form.health_infectious_travel;
+        const securityValid = !!form.high_risk_travel && 
+                             !!form.entry_denied_before && 
+                             !!form.overstayed_before && 
+                             !!form.international_sanctions;
+        
+        // If travelled to infectious areas, require countries list
+        if (form.health_infectious_travel === "yes") {
+          return healthValid && securityValid && !!form.health_infectious_countries;
+        }
+        return healthValid && securityValid;
+      }
       case 10: return agreedToTerms;
       default: return true;
     }
-  }, [form, isEta, passportExpired, emailError, phoneError, agreedToTerms]);
+  }, [form, isEta, passportExpired, emailError, phoneError, agreedToTerms, docs, requiredDocTypes]);
 
   const goNext = () => { 
     if (canNext(step)) {
@@ -428,13 +585,29 @@ export default function NewApplicationPage() {
       const selectedCountry = getCountryByCode(form.phone_country);
       const fullPhone = form.phone ? `${selectedCountry?.dialCode}${form.phone}` : "";
       
-      const res = await api.post(isEta ? "/applicant/eta-applications" : "/applicant/applications", { 
-        ...form, 
+      // Map frontend field names to backend field names
+      const submissionData = {
+        ...form,
         phone: fullPhone,
-        payment_method: paymentMethod 
-      });
+        passport_issuing_authority: form.issuing_authority, // Map issuing_authority to passport_issuing_authority
+        hotel_booking_reference: form.booking_reference, // Map booking_reference to hotel_booking_reference
+        payment_method: paymentMethod
+      };
+      
+      // Remove the frontend-only fields
+      delete (submissionData as any).issuing_authority;
+      delete (submissionData as any).booking_reference;
+      
+      const res = await api.post(isEta ? "/applicant/eta-applications" : "/applicant/applications", submissionData);
       const app = res.data?.application ?? res.data;
-      router.push(app?.id ? `/dashboard/applicant/applications/${app.id}` : "/dashboard/applicant/applications");
+
+      // After creating the application, send the user directly into
+      // the standard payment flow used on the application detail pages.
+      if (app?.id) {
+        router.push(`/dashboard/applicant/applications/${app.id}/payment`);
+      } else {
+        router.push("/dashboard/applicant/applications");
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Submission failed");
     } finally { setSubmitting(false); }
@@ -445,6 +618,8 @@ export default function NewApplicationPage() {
 
   /* ── Nav buttons ─────────────────────────────────── */
   function NavButtons({ isPayment }: { isPayment?: boolean }) {
+    const isNextDisabled = !canNext(step);
+    
     return (
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
         <button type="button" disabled={step === 0} onClick={goPrev}
@@ -456,9 +631,23 @@ export default function NewApplicationPage() {
             {submitting ? "Processing..." : <><CreditCard size={14} className="mr-1.5" /> Pay ${totalFee.toFixed(2)}</>}
           </Button>
         ) : (
-          <Button onClick={goNext} disabled={!canNext(step)} className="!rounded-lg !px-5 !py-2">
-            Continue <ArrowRight size={14} className="ml-1" />
-          </Button>
+          <div className="relative group">
+            <Button 
+              onClick={goNext} 
+              disabled={isNextDisabled} 
+              className={`!rounded-lg !px-5 !py-2 ${isNextDisabled ? '!opacity-50 !cursor-not-allowed' : ''}`}
+            >
+              Continue <ArrowRight size={14} className="ml-1" />
+            </Button>
+            {isNextDisabled && (
+              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block">
+                <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
+                  Please fill all required fields
+                  <div className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     );
@@ -506,7 +695,7 @@ export default function NewApplicationPage() {
         <div>
           <button 
             type="button" 
-            onClick={() => set("visa_channel", "online")}
+            onClick={() => set("visa_channel", "e-visa")}
             className={`w-full flex items-center gap-3 p-4 rounded-lg border-2 text-left transition-all ${form.visa_channel === "online" ? "border-accent bg-accent/5" : "border-gray-200 hover:border-gray-300"}`}
           >
             <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
@@ -1009,6 +1198,30 @@ export default function NewApplicationPage() {
               </select>
             </FormField>
           </div>
+
+          {/* Conditional: Countries Visited (if yes) */}
+          {form.visited_other_countries === "yes" && (
+            <div className="grid sm:grid-cols-3 gap-3 pt-3 border-t border-gray-200">
+              <FormField label="Country 1" required>
+                <select className="w-full h-9 rounded-lg border border-gray-200 px-3 text-sm" value={form.visited_country_1} onChange={e => set("visited_country_1", e.target.value)}>
+                  <option value="">Select country</option>
+                  {countries.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Country 2" required>
+                <select className="w-full h-9 rounded-lg border border-gray-200 px-3 text-sm" value={form.visited_country_2} onChange={e => set("visited_country_2", e.target.value)}>
+                  <option value="">Select country</option>
+                  {countries.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Country 3" required>
+                <select className="w-full h-9 rounded-lg border border-gray-200 px-3 text-sm" value={form.visited_country_3} onChange={e => set("visited_country_3", e.target.value)}>
+                  <option value="">Select country</option>
+                  {countries.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                </select>
+              </FormField>
+            </div>
+          )}
         </div>
 
         {/* Purpose of Visit */}
@@ -1119,31 +1332,98 @@ export default function NewApplicationPage() {
     return (
       <section className="space-y-5">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Security & Travel Declaration</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Declarations</h2>
           <p className="text-sm text-gray-500 mt-1">Please answer all questions truthfully.</p>
         </div>
+
+        {/* Health Declaration */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield size={16} className="text-accent" />
+            <h3 className="text-sm font-semibold text-gray-900">Health Declaration</h3>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 py-3 border-b border-gray-200">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-600">1</span>
+              <div className="flex-1">
+                <p className="text-sm text-gray-900 mb-2">
+                  Have you travelled to any country or region affected by infectious diseases or public health alerts in the past 14 days?
+                </p>
+                <p className="text-xs text-gray-500 mb-2">
+                  For the latest list of affected countries or regions, please refer to the{" "}
+                  <a href="https://ghs.gov.gh" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                    Ghana Health Service
+                  </a>{" "}
+                  or{" "}
+                  <a href="https://www.who.int" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                    WHO
+                  </a>.
+                </p>
+                <div className="flex gap-4">
+                  {["no", "yes"].map(v => (
+                    <label key={v} className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="health_infectious_travel" 
+                        value={v} 
+                        checked={form.health_infectious_travel === v} 
+                        onChange={() => set("health_infectious_travel", v)} 
+                        className="w-4 h-4 text-accent" 
+                      />
+                      <span className="text-sm capitalize">{v}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Conditional: List countries if yes */}
+            {form.health_infectious_travel === "yes" && (
+              <div className="pl-9">
+                <FormField label="Please list the countries visited" required>
+                  <textarea
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none"
+                    rows={3}
+                    placeholder="Enter countries separated by commas (e.g., Country A, Country B, Country C)"
+                    value={form.health_infectious_countries}
+                    onChange={e => set("health_infectious_countries", e.target.value)}
+                  />
+                </FormField>
+              </div>
+            )}
+          </div>
+        </div>
         
-        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-1">
-          <DeclarationQ 
-            num={1}
-            label="Have you travelled to any high-risk conflict zones in the past 2 years?" 
-            field="high_risk_travel" 
-          />
-          <DeclarationQ 
-            num={2}
-            label="Have you ever been denied a visa, refused entry at any border, deported from any country, or convicted of a criminal offence?" 
-            field="entry_denied_before" 
-          />
-          <DeclarationQ 
-            num={3}
-            label="Have you previously overstayed a visa or violated immigration conditions in Ghana?" 
-            field="overstayed_before" 
-          />
-          <DeclarationQ 
-            num={4}
-            label="Are you currently subject to any international sanctions, travel bans, or Interpol notices?" 
-            field="international_sanctions" 
-          />
+        {/* Security & Travel Declaration */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={16} className="text-accent" />
+            <h3 className="text-sm font-semibold text-gray-900">Security & Travel Declaration</h3>
+          </div>
+          
+          <div className="space-y-1">
+            <DeclarationQ 
+              num={1}
+              label="Have you travelled to any high-risk conflict zones in the past 2 years?" 
+              field="high_risk_travel" 
+            />
+            <DeclarationQ 
+              num={2}
+              label="Have you ever been denied a visa, refused entry at any border, deported from any country, or convicted of a criminal offence?" 
+              field="entry_denied_before" 
+            />
+            <DeclarationQ 
+              num={3}
+              label="Have you previously overstayed a visa or violated immigration conditions in Ghana?" 
+              field="overstayed_before" 
+            />
+            <DeclarationQ 
+              num={4}
+              label="Are you currently subject to any international sanctions, travel bans, or Interpol notices?" 
+              field="international_sanctions" 
+            />
+          </div>
         </div>
 
         {/* Certification */}
@@ -1160,21 +1440,36 @@ export default function NewApplicationPage() {
 
   /* ── STEP: Documents ─────────────────────────────── */
   function renderDocs() {
+    const requiredUploaded = requiredDocTypes.filter(d => !!docs[d.key]).length;
+    const optionalUploaded = optionalDocTypes.filter(d => !!docs[d.key]).length;
+    const totalDocs = requiredDocTypes.length + optionalDocTypes.length;
+
     return (
       <section className="space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Upload Documents</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Required documents for your application.</p>
+          <h2 className="text-base font-semibold text-gray-900">Document Upload</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Upload the required documents to support your application.</p>
         </div>
+
+        <div className="flex items-center justify-between text-xs text-gray-600">
+          <span>{requiredUploaded + optionalUploaded}/{totalDocs}</span>
+          <span className="text-gray-500">Uploaded</span>
+        </div>
+        <div className="text-xs text-gray-600">
+          <span className="font-medium">{requiredUploaded}</span> of <span className="font-medium">{requiredDocTypes.length}</span> required documents uploaded
+        </div>
+
         <div className="space-y-2">
-          {currentDocTypes.map(d => (
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-2">Required Documents</p>
+          {requiredDocTypes.map((d) => (
             <div key={d.key} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-white">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${docs[d.key] ? "bg-green-100" : "bg-gray-100"}`}>
                 {docs[d.key] ? <Check size={14} className="text-green-600" /> : <FileText size={14} className="text-gray-400" />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">{d.label}</p>
+                <p className="text-sm font-medium text-gray-900">{d.label} <span className="text-red-500">*</span></p>
                 {docs[d.key] && <p className="text-xs text-gray-500 truncate">{docs[d.key]?.name}</p>}
+                {!docs[d.key] && <p className="text-[10px] text-gray-500">PDF, JPG or PNG — max 10 MB</p>}
               </div>
               <label className="cursor-pointer">
                 <span className="text-xs font-medium text-accent hover:underline">{docs[d.key] ? "Change" : "Upload"}</span>
@@ -1183,6 +1478,27 @@ export default function NewApplicationPage() {
             </div>
           ))}
         </div>
+
+        <div className="space-y-2 pt-3 border-t border-gray-100">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-1">Optional Documents</p>
+          {optionalDocTypes.map((d) => (
+            <div key={d.key} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-white">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${docs[d.key] ? "bg-green-100" : "bg-gray-100"}`}>
+                {docs[d.key] ? <Check size={14} className="text-green-600" /> : <FileText size={14} className="text-gray-400" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900">{d.label}</p>
+                {docs[d.key] && <p className="text-xs text-gray-500 truncate">{docs[d.key]?.name}</p>}
+                {!docs[d.key] && <p className="text-[10px] text-gray-500">PDF, JPG or PNG — max 10 MB</p>}
+              </div>
+              <label className="cursor-pointer">
+                <span className="text-xs font-medium text-accent hover:underline">{docs[d.key] ? "Change" : "Upload"}</span>
+                <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e => handleFile(d.key, e.target.files?.[0] || null)} />
+              </label>
+            </div>
+          ))}
+        </div>
+
         <NavButtons />
       </section>
     );
@@ -1292,7 +1608,7 @@ export default function NewApplicationPage() {
           
           {/* Preview Section - 40% */}
           <div className="w-full lg:w-[40%] lg:sticky lg:top-4">
-            <VisaPreviewSidebar form={form} selVT={selVT} selST={selST} documents={docs} cName={cName} fmtDate={fmtDate} docTypes={currentDocTypes} />
+            <VisaPreviewSidebar form={form} selVT={selVT} selST={selST} documents={docs} cName={cName} fmtDate={fmtDate} docTypes={requiredDocTypes} />
           </div>
         </div>
       </div>

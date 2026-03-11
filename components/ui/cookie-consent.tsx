@@ -13,6 +13,7 @@ interface CookieSettings {
 export default function CookieConsent() {
   const [showConsent, setShowConsent] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [cookies, setCookies] = useState<CookieSettings>({
     necessary: true, // Always required
     analytics: false,
@@ -21,12 +22,16 @@ export default function CookieConsent() {
   });
 
   useEffect(() => {
+    setMounted(true);
     // Check if user has already made a choice
     const consent = localStorage.getItem("ghana-evisa-cookie-consent");
     if (!consent) {
       setShowConsent(true);
     }
   }, []);
+
+  // Don't render on server side to avoid hydration issues
+  if (!mounted) return null;
 
   const handleAcceptAll = () => {
     const allAccepted = {

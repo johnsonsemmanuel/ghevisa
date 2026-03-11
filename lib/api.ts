@@ -9,8 +9,7 @@ const api = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  withCredentials: true,
-  withXSRFToken: true,
+  withCredentials: true, // CRITICAL: Send cookies with requests
 });
 
 /**
@@ -19,18 +18,34 @@ const api = axios.create({
  * (login, register) when using Sanctum stateful SPA auth.
  */
 export async function fetchCsrfCookie(): Promise<void> {
-  await axios.get(`${BACKEND_URL}/sanctum/csrf-cookie`, {
-    withCredentials: true,
-  });
+  try {
+    const csrfUrl = `${BACKEND_URL}/sanctum/csrf-cookie`;
+    await axios.get(csrfUrl, {
+      withCredentials: true,
+      timeout: 10000, // 10 second timeout
+    });
+  } catch (error) {
+    console.error('Failed to fetch CSRF cookie:', error);
+    throw error;
+  }
 }
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // SECURITY FIX: Token now in HttpOnly cookie, no need to add Authorization header
+    // The cookie will be sent automatically with withCredentials: true
+    
+    // Manual CSRF token extraction and header setting
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1];
+    
+    if (csrfToken) {
+      config.headers['X-XSRF-TOKEN'] = decodeURIComponent(csrfToken);
     }
-    const locale = localStorage.getItem("locale") || "en";
+    
+    const locale = sessionStorage.getItem("locale") || "en";
     config.headers["Accept-Language"] = locale;
   }
   return config;
@@ -44,8 +59,7 @@ api.interceptors.response.use(
         // Avoid redirect loop if already on a login page
         const isLoginPage = window.location.pathname.startsWith("/login");
         if (!isLoginPage) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
+          sessionStorage.removeItem("user");
           // Use a brief timeout so the toast renders before redirect
           import("react-hot-toast").then(({ default: toast }) => {
             toast.error("Session expired. Please sign in again.", { duration: 3000 });

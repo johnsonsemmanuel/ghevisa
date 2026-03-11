@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { CheckCircle2, XCircle, Clock, CreditCard } from "lucide-react";
@@ -111,41 +112,49 @@ export default function GisPaymentsPage() {
       title="Payments"
       description="View payment records for cases in your queue"
     >
-      {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-success/10 rounded-xl flex items-center justify-center">
+      {/* Summary Cards - Matching main dashboard style */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card variant="default">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-success/8 flex items-center justify-center">
               <CreditCard size={20} className="text-success" />
             </div>
-            <div>
-              <p className="text-xs text-text-muted">Total Collected</p>
-              <p className="text-xl font-bold text-success">${totalCollected.toFixed(2)}</p>
+            <div className="text-right">
+              <p className="text-xl font-bold text-text-primary">${totalCollected.toFixed(2)}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Collected</p>
             </div>
           </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-info/10 rounded-xl flex items-center justify-center">
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Total Collected</h3>
+          <p className="text-xs text-text-secondary">Successfully processed payments</p>
+        </Card>
+
+        <Card variant="default">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-info/8 flex items-center justify-center">
               <CheckCircle2 size={20} className="text-info" />
             </div>
-            <div>
-              <p className="text-xs text-text-muted">Completed</p>
+            <div className="text-right">
               <p className="text-xl font-bold text-text-primary">{completedCount}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Completed</p>
             </div>
           </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-warning/10 rounded-xl flex items-center justify-center">
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Completed</h3>
+          <p className="text-xs text-text-secondary">Payment transactions finalized</p>
+        </Card>
+
+        <Card variant="default">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-warning/8 flex items-center justify-center">
               <Clock size={20} className="text-warning" />
             </div>
-            <div>
-              <p className="text-xs text-text-muted">Pending</p>
-              <p className="text-xl font-bold text-warning">{pendingCount}</p>
+            <div className="text-right">
+              <p className="text-xl font-bold text-text-primary">{pendingCount}</p>
+              <p className="text-[10px] text-text-muted uppercase tracking-wide">Pending</p>
             </div>
           </div>
-        </div>
+          <h3 className="font-semibold text-text-primary text-sm mb-1">Pending</h3>
+          <p className="text-xs text-text-secondary">Awaiting confirmation</p>
+        </Card>
       </div>
 
       {/* Filter */}

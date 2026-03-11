@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Clock, LogOut, RefreshCw } from "lucide-react";
 import api from "@/lib/api";
 
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // SECURITY FIX HIGH-01: 15 minutes (matches backend)
 const WARNING_BEFORE_MS = 5 * 60 * 1000; // Show warning 5 minutes before timeout
 
 export function SessionTimeoutWarning() {
@@ -22,8 +22,8 @@ export function SessionTimeoutWarning() {
 
   const extendSession = async () => {
     try {
-      // Make a simple API call to refresh the token
-      await api.get("/auth/me");
+      // SECURITY FIX HIGH-01: Call refresh endpoint to get new token
+      await api.post("/auth/refresh");
       resetTimer();
     } catch {
       // If refresh fails, logout

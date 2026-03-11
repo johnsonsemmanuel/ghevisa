@@ -1,0 +1,958 @@
+"use client";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PaymentModal } from "@/components/ui/payment-modal";
+import { VisaPreviewSidebar } from "@/components/ui/visa-preview-sidebar";
+import { countries } from "@/lib/countries";
+import { isEtaEligible, getEtaFee, PORTS_OF_ENTRY, DESTINATION_CITIES, VISA_DURATION_OPTIONS, ACCOMMODATION_OPTIONS } from "@/lib/visa-matrix";
+import type { VisaType, ServiceTier } from "@/lib/types";
+import { ArrowRight, ArrowLeft, Check, Monitor, Plane, Briefcase, ArrowLeftRight, Clock, TrendingUp, Crown, CheckCircle2, FileText, CreditCard, AlertTriangle, Shield, XCircle, Globe } from "lucide-react";
+
+/* ── Steps ─────────────────────────────────────────── */
+const EVISA_STEPS = ["Visa Channel", "Visa Type", "Entry Type", "Processing Speed", "Personal Info", "Contact Info", "Passport Info", "Employment Info", "Travel Details", "Declarations", "Documents", "Review & Pay"];
+const ETA_STEPS = ["Visa Channel", "Personal Info", "Contact Info", "Passport Info", "Travel Details", "Declarations", "Documents", "Review & Pay"];
+
+/* ── Issuing Authorities ───────────────────────────── */
+const ISSUING_AUTHORITIES = [
+  { value: "ministry_foreign_affairs", label: "Ministry of Foreign Affairs" },
+  { value: "ministry_interior", label: "Ministry of Interior" },
+  { value: "immigration_department", label: "Immigration Department" },
+  { value: "passport_office", label: "Passport Office" },
+  { value: "consulate", label: "Consulate/Embassy" },
+  { value: "other", label: "Other" },
+];
+
+const tierMeta: Record<string, { icon: React.ReactNode; bg: string; ring: string; features: string[] }> = {
+  standard: { icon: <Clock size={20} className="text-accent" />, bg: "bg-accent/5", ring: "ring-accent/20", features: ["Email notifications", "3-5 business days"] },
+  fast_track: { icon: <TrendingUp size={20} className="text-accent" />, bg: "bg-accent/5", ring: "ring-accent/20", features: ["Priority queue", "24-48 hours"] },
+  express: { icon: <Crown size={20} className="text-accent" />, bg: "bg-accent/5", ring: "ring-accent/20", features: ["Dedicated officer", "Same day"] },
+};
+
+const DOC_TYPES = [
+  { key: "passport_bio", label: "Passport bio-data page", desc: "Clear scan of passport bio page" },
+  { key: "passport_photo", label: "Passport-sized photograph", desc: "Recent photo (white background)" },
+  { key: "proof_of_accommodation", label: "Proof of accommodation", desc: "Hotel booking or host invitation" },
+  { key: "return_ticket", label: "Return flight ticket", desc: "Confirmed return itinerary" },
+  { key: "proof_of_funds", label: "Proof of funds", desc: "Bank statement (last 3 months)" },
+];
+const ETA_DOC_TYPES = [
+  { key: "passport_bio", label: "Passport bio-data page", desc: "Clear scan of passport bio page" },
+  { key: "passport_photo", label: "Passport-sized photograph", desc: "Recent photo (white background)" },
+];
+const BUSINESS_DOC_TYPES = [
+  { key: "passport_bio", label: "Passport bio-data page", desc: "Clear scan of passport bio page" },
+  { key: "passport_photo", label: "Passport-sized photograph", desc: "Recent photo (white background)" },
+  { key: "invitation_letter", label: "Invitation letter from Ghana", desc: "From host company on letterhead" },
+  { key: "company_letter", label: "Company introduction letter", desc: "From your employer" },
+  { key: "proof_of_funds", label: "Proof of funds", desc: "Bank statement or sponsorship" },
+  { key: "return_ticket", label: "Return flight ticket", desc: "Confirmed return itinerary" },
+];
+
+const PURPOSE_OPTIONS = [
+  { value: "tourism", label: "Tourism / Holiday" },
+  { value: "business", label: "Business Meeting" },
+  { value: "family", label: "Family Visit" },
+  { value: "transit", label: "Transit" },
+  { value: "other", label: "Other" },
+];
+
+/* ── Helpers ───────────────────────────────────────── */
+function StepTransition({ stepKey, children }: { stepKey: number; children: React.ReactNode }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => { setShow(false); const t = requestAnimationFrame(() => setShow(true)); return () => cancelAnimationFrame(t); }, [stepKey]);
+  return <div className={`transition-all duration-300 ease-out ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>{children}</div>;
+}
+function ReviewCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return <div className="p-4 rounded-xl bg-gray-50 border border-gray-100"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{title}</p><div className="space-y-1.5 text-sm">{children}</div></div>;
+}
+function ReviewRow({ label, value, capitalize }: { label: string; value?: string; capitalize?: boolean }) {
+  return <div className="flex justify-between"><span className="text-gray-500">{label}</span><span className={`font-medium text-right max-w-[180px] truncate ${capitalize ? "capitalize" : ""}`}>{value || "\u2014"}</span></div>;
+}
+function FormField({ label, required, children, hint, fullWidth }: { label: string; required?: boolean; children: React.ReactNode; hint?: string; fullWidth?: boolean }) {
+  return (
+    <div className={fullWidth ? "sm:col-span-2" : ""}>
+      <label className="block text-xs font-medium text-gray-600 mb-1">{label}{required && " *"}</label>
+      {children}
+      {hint && <p className="text-[10px] text-gray-400 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+export default function NewApplicationPage() {
+  const router = useRouter();
+  const { data: vtData } = useQuery({ queryKey: ["visa-types"], queryFn: () => api.get<{ visa_types: VisaType[] }>("/visa-types").then(r => r.data) });
+  const { data: stData } = useQuery({ queryKey: ["service-tiers"], queryFn: () => api.get<{ service_tiers: ServiceTier[] }>("/service-tiers").then(r => r.data) });
+  const visaTypes = vtData?.visa_types ?? [];
+  const serviceTiers = stData?.service_tiers ?? [];
+
+  const [step, setStep] = useState(0);
+  const [showPay, setShowPay] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string>("");
+  const [phoneError, setPhoneError] = useState<string>("");
+  const [docs, setDocs] = useState<Record<string, File | null>>({});
+
+  const [form, setForm] = useState({
+    // Core
+    visa_channel: "", visa_type_id: "", entry_type: "", service_tier_id: "", authorization_type: "",
+    // Personal
+    first_name: "", last_name: "", other_names: "", date_of_birth: "", gender: "", marital_status: "",
+    place_of_birth: "", country_of_birth: "", nationality: "", email: "", phone: "",
+    current_address: "", city: "", state_province: "", postal_code: "", country_of_residence: "",
+    occupation: "", employer_name: "", employer_address: "", employer_phone: "",
+    // Passport
+    passport_number: "", issuing_authority: "", passport_issue_date: "", passport_expiry: "", passport_issue_place: "",
+    // Travel
+    intended_arrival: "", duration_days: "", visa_duration: "", port_of_entry: "", place_of_embarkation: "",
+    destination_city: "", address_in_ghana: "", accommodation_type: "",
+    airline: "", flight_number: "", return_date: "",
+    purpose_of_visit: "", purpose_details: "",
+    // Host/Sponsor
+    host_name: "", host_phone: "", host_address: "", host_relationship: "",
+    hotel_name: "", hotel_booking_reference: "",
+    // Business specific
+    company_name: "", company_address: "", job_title: "",
+    host_company_name: "", host_company_address: "", host_contact_name: "", host_contact_phone: "", business_purpose: "", business_details: "",
+    // History
+    visited_ghana_before: "", previous_visa_number: "", visited_other_countries: "",
+    visited_country_1: "", visited_country_2: "", visited_country_3: "",
+    // Declarations
+    entry_denied_before: "", criminal_conviction: "", health_issues: "", overstayed_before: "",
+  });
+
+  /* ── Email validation ───────────────────────────── */
+  const validateEmail = useCallback((email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError("");
+      return true;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  }, []);
+
+  /* ── Phone validation ────────────────────────────── */
+  const validatePhone = useCallback((phone: string) => {
+    if (!phone) {
+      setPhoneError("");
+      return true;
+    }
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, "");
+    // Ghana phone numbers should be 10 digits (without country code)
+    if (digitsOnly.length !== 10) {
+      setPhoneError("Ghana phone numbers must be exactly 10 digits");
+      return false;
+    }
+    setPhoneError("");
+    return true;
+  }, []);
+
+  const set = useCallback((k: keyof typeof form, v: string) => {
+    // Special handling for email
+    if (k === "email") {
+      validateEmail(v);
+    }
+    // Special handling for phone - only allow digits
+    if (k === "phone") {
+      const digitsOnly = v.replace(/\D/g, "");
+      if (digitsOnly.length <= 10) {
+        setForm(p => ({ ...p, [k]: digitsOnly }));
+        validatePhone(digitsOnly);
+      }
+      return;
+    }
+    setForm(p => ({ ...p, [k]: v }));
+  }, [validateEmail, validatePhone]);
+  const selVT = visaTypes.find(v => v.id.toString() === form.visa_type_id);
+  const selST = serviceTiers.find(t => t.id.toString() === form.service_tier_id);
+  const cName = useCallback((code: string) => countries.find(c => c.code === code)?.name ?? code, []);
+  const isEta = form.authorization_type === "eta";
+  const isBusiness = selVT?.slug === "business";
+  const STEPS = isEta ? ETA_STEPS : EVISA_STEPS;
+  const currentDocTypes = isEta ? ETA_DOC_TYPES : isBusiness ? BUSINESS_DOC_TYPES : DOC_TYPES;
+
+  /* ── Passport validation ─────────────────────────── */
+  const passportStatus = useMemo(() => {
+    if (!form.passport_expiry) return { level: "none" as const, msg: "" };
+    const exp = new Date(form.passport_expiry);
+    if (isNaN(exp.getTime())) return { level: "none" as const, msg: "" };
+    if (exp < new Date()) return { level: "expired" as const, msg: "Your passport has expired. You must renew your passport before applying for a visa." };
+    const sm = new Date(); sm.setMonth(sm.getMonth() + 6);
+    if (exp < sm) return { level: "warning" as const, msg: "Your passport expires in less than 6 months. Some countries may deny entry. We recommend renewing before travel." };
+    return { level: "valid" as const, msg: "" };
+  }, [form.passport_expiry]);
+  const passportExpired = passportStatus.level === "expired";
+
+  /* ── Fees ────────────────────────────────────────── */
+  const etaFee = useMemo(() => (form.nationality ? getEtaFee(form.nationality) : 20), [form.nationality]);
+  const baseFee = useMemo(() => {
+    if (isEta) return etaFee;
+    const b = selVT ? parseFloat(selVT.base_fee) : 260;
+    return form.entry_type === "multiple" ? b * 1.8 : b;
+  }, [selVT, form.entry_type, isEta, etaFee]);
+  const procFee = useMemo(() => {
+    if (isEta || !selST) return 0;
+    return (baseFee * parseFloat(selST.fee_multiplier) + parseFloat(selST.additional_fee)) - baseFee;
+  }, [selST, baseFee, isEta]);
+  const totalFee = baseFee + procFee;
+
+  /* ── Nationality check for ETA ───────────────────── */
+  useEffect(() => {
+    if (!form.nationality) return;
+    const eligible = isEtaEligible(form.nationality);
+    if (eligible && form.authorization_type !== "eta") set("authorization_type", "eta");
+    else if (!eligible && form.authorization_type !== "evisa") set("authorization_type", "evisa");
+  }, [form.nationality, form.authorization_type, set]);
+
+  /* ── Validation ──────────────────────────────────── */
+  const canNext = useCallback((s: number): boolean => {
+    if (isEta) {
+      switch (s) {
+        case 0: return !!form.visa_channel;
+        case 1: return !!form.first_name && !!form.last_name && !!form.date_of_birth && !!form.nationality; // Personal Info
+        case 2: return !!form.email && !emailError && (!form.phone || !phoneError); // Contact Info
+        case 3: return !!form.passport_number && !!form.issuing_authority && !!form.passport_expiry && !passportExpired; // Passport Info
+        case 4: return !!form.intended_arrival && !!form.duration_days && !!form.address_in_ghana && !!form.port_of_entry; // Travel
+        case 5: return true; // Declarations
+        default: return true;
+      }
+    }
+    switch (s) {
+      case 0: return !!form.visa_channel;
+      case 1: return !!form.visa_type_id;
+      case 2: return !!form.entry_type;
+      case 3: return !!form.service_tier_id;
+      case 4: return !!form.first_name && !!form.last_name && !!form.date_of_birth && !!form.nationality; // Personal Info
+      case 5: return !!form.email && !emailError && (!form.phone || !phoneError); // Contact Info
+      case 6: return !!form.passport_number && !!form.issuing_authority && !!form.passport_expiry && !passportExpired; // Passport Info
+      case 7: return true; // Employment Info (optional)
+      case 8: return !!form.intended_arrival && !!form.duration_days && !!form.address_in_ghana && !!form.port_of_entry; // Travel
+      case 9: return true; // Declarations
+      default: return true;
+    }
+  }, [form, isEta, passportExpired, emailError, phoneError]);
+
+  const goNext = () => { if (canNext(step)) setStep(s => Math.min(s + 1, STEPS.length - 1)); };
+  const goPrev = () => setStep(s => Math.max(s - 1, 0));
+
+  const handleSubmit = async () => {
+    setError(null); setSubmitting(true);
+    try {
+      const res = await api.post(isEta ? "/applicant/eta-applications" : "/applicant/applications", { ...form });
+      const app = res.data?.application ?? res.data;
+      router.push(app?.id ? `/dashboard/applicant/applications/${app.id}` : "/dashboard/applicant/applications");
+    } catch (e: any) {
+      setError(e?.response?.data?.message || "Unable to submit.");
+    } finally { setSubmitting(false); }
+  };
+
+  const handleFile = (key: string, file: File | null) => setDocs(p => ({ ...p, [key]: file }));
+  const fmtDate = (d: string) => { if (!d) return "\u2014"; try { return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); } catch { return d; } };
+
+  /* ── Nav buttons ─────────────────────────────────── */
+  function NavButtons({ stepIdx }: { stepIdx: number }) {
+    const isReview = stepIdx === STEPS.length - 1;
+    return (
+      <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+        <button type="button" disabled={step === 0} onClick={goPrev}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${step === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"}`}>
+          <ArrowLeft size={16} /> Back
+        </button>
+        {!isReview && (<Button onClick={goNext} disabled={!canNext(stepIdx)} className="!rounded-xl !px-6 !py-2.5">Continue <ArrowRight size={16} className="ml-1.5" /></Button>)}
+      </div>
+    );
+  }
+
+  /* ── Step router ─────────────────────────────────── */
+  function renderStepContent() {
+    if (isEta) {
+      switch (step) {
+        case 0: return renderChannel();
+        case 1: return renderPersonalInfo();
+        case 2: return renderContactInfo();
+        case 3: return renderPassportInfo();
+        case 4: return renderTravel();
+        case 5: return renderDeclarations();
+        case 6: return renderDocs();
+        case 7: return renderReview();
+        default: return null;
+      }
+    }
+    switch (step) {
+      case 0: return renderChannel();
+      case 1: return renderVisaType();
+      case 2: return renderEntry();
+      case 3: return renderSpeed();
+      case 4: return renderPersonalInfo();
+      case 5: return renderContactInfo();
+      case 6: return renderPassportInfo();
+      case 7: return renderEmploymentInfo();
+      case 8: return renderTravel();
+      case 9: return renderDeclarations();
+      case 10: return renderDocs();
+      case 11: return renderReview();
+      default: return null;
+    }
+  }
+
+  /* ── STEP: Visa Channel ──────────────────────────── */
+  function renderChannel() {
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Visa Channel</h2>
+        <p className="text-sm text-gray-500 mb-8">Select the application channel for your Ghana visa.</p>
+        <div className="flex justify-center">
+          <button type="button" onClick={() => set("visa_channel", "e-visa")}
+            className={`w-full max-w-sm p-8 rounded-xl border-2 transition-all cursor-pointer text-center ${form.visa_channel === "e-visa" ? "border-accent bg-accent/5 ring-4 ring-accent/10" : "border-gray-200 hover:border-accent/40 hover:shadow-md"}`}>
+            <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4"><Monitor size={32} className="text-accent" /></div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">E-Visa</h3>
+            <p className="text-sm text-gray-500 mb-4">Apply online from anywhere in the world with digital document submission.</p>
+            <div className="flex items-center justify-center gap-4 text-xs text-gray-400"><span>24-48 hrs</span><span>•</span><span>Available worldwide</span></div>
+          </button>
+        </div>
+        <NavButtons stepIdx={0} />
+      </section>
+    );
+  }
+
+  /* ── STEP: Visa Type ─────────────────────────────── */
+  function renderVisaType() {
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Purpose of Travel</h2>
+        <p className="text-sm text-gray-500 mb-8">Why are you traveling to Ghana?</p>
+        <div className="grid sm:grid-cols-2 gap-6 max-w-lg mx-auto">
+          {visaTypes.filter(vt => ["tourism", "business"].includes(vt.slug)).map(vt => {
+            const icon = vt.slug === "tourism" ? <Plane size={28} className="text-accent" /> : <Briefcase size={28} className="text-accent" />;
+            const active = form.visa_type_id === vt.id.toString();
+            return (
+              <button key={vt.id} type="button" onClick={() => set("visa_type_id", vt.id.toString())}
+                className={`relative text-center p-6 rounded-xl border-2 transition-all cursor-pointer ${active ? "border-accent bg-accent/5 ring-4 ring-accent/10" : "border-gray-200 hover:border-accent/40 hover:shadow-md"}`}>
+                {active && <CheckCircle2 size={18} className="text-accent absolute top-3 right-3" />}
+                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-3">{icon}</div>
+                <h3 className="font-bold text-gray-900 mb-1">{vt.name}</h3>
+                <p className="text-xs text-gray-500 line-clamp-2 mb-3">{vt.description}</p>
+                <span className="text-sm font-semibold text-accent">From ${vt.base_fee}</span>
+              </button>
+            );
+          })}
+          {visaTypes.length === 0 && <p className="col-span-2 text-center text-sm text-gray-400 py-8">Loading visa types...</p>}
+        </div>
+        <NavButtons stepIdx={1} />
+      </section>
+    );
+  }
+
+  /* ── STEP: Entry Type ────────────────────────────── */
+  function renderEntry() {
+    const opts = [
+      { val: "single", label: "Single Entry", desc: "Enter Ghana once during the visa validity period.", fee: selVT ? parseFloat(selVT.base_fee).toFixed(0) : "260", feeLabel: "Base fee", icon: <ArrowRight size={24} className="text-accent" /> },
+      { val: "multiple", label: "Multiple Entry", desc: "Enter and leave Ghana multiple times.", fee: selVT ? (parseFloat(selVT.base_fee) * 1.8).toFixed(0) : "468", feeLabel: "Base + entry fee", icon: <ArrowLeftRight size={24} className="text-accent" /> },
+    ];
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Entry Type</h2>
+        <p className="text-sm text-gray-500 mb-8">How many times will you enter Ghana?</p>
+        <div className="grid sm:grid-cols-2 gap-6 max-w-lg mx-auto">
+          {opts.map(opt => {
+            const active = form.entry_type === opt.val;
+            return (
+              <button key={opt.val} type="button" onClick={() => set("entry_type", opt.val)}
+                className={`relative text-center p-6 rounded-xl border-2 transition-all cursor-pointer ${active ? "border-accent bg-accent/5 ring-4 ring-accent/10" : "border-gray-200 hover:border-accent/40 hover:shadow-md"}`}>
+                {active && <CheckCircle2 size={18} className="text-accent absolute top-3 right-3" />}
+                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-3">{opt.icon}</div>
+                <h3 className="font-bold text-gray-900 mb-1">{opt.label}</h3>
+                <p className="text-xs text-gray-500 mb-4">{opt.desc}</p>
+                <div className="pt-3 border-t border-gray-100"><p className="text-xs text-gray-400">{opt.feeLabel}</p><p className="text-xl font-bold text-accent">${opt.fee}</p></div>
+              </button>
+            );
+          })}
+        </div>
+        <NavButtons stepIdx={2} />
+      </section>
+    );
+  }
+
+  /* ── STEP: Processing Speed ──────────────────────── */
+  function renderSpeed() {
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Processing Speed</h2>
+        <p className="text-sm text-gray-500 mb-8">How quickly do you need your visa?</p>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {serviceTiers.filter(t => t.is_active).map(tier => {
+            const meta = tierMeta[tier.code] ?? tierMeta.standard;
+            const tierTotal = (baseFee * parseFloat(tier.fee_multiplier)) + parseFloat(tier.additional_fee);
+            const active = form.service_tier_id === tier.id.toString();
+            return (
+              <button key={tier.id} type="button" onClick={() => set("service_tier_id", tier.id.toString())}
+                className={`relative text-center p-5 rounded-xl border-2 transition-all cursor-pointer ${active ? "border-accent bg-accent/5 ring-4 ring-accent/10" : "border-gray-200 hover:border-accent/40 hover:shadow-md"}`}>
+                {active && <CheckCircle2 size={16} className="text-accent absolute top-3 right-3" />}
+                <div className={`w-11 h-11 rounded-lg ${meta.bg} flex items-center justify-center mx-auto mb-3 ring-2 ${meta.ring}`}>{meta.icon}</div>
+                <h3 className="font-bold text-gray-900 text-sm mb-0.5">{tier.name}</h3>
+                <p className="text-[11px] text-gray-400 mb-3">{tier.processing_time_display}</p>
+                <div className="flex flex-wrap justify-center gap-1 mb-3">{meta.features.map((f, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-500">{f}</span>))}</div>
+                <div className="pt-3 border-t border-gray-100"><p className="text-xl font-bold text-accent">${tierTotal.toFixed(0)}</p>{tier.code !== "standard" && <p className="text-[10px] text-gray-400">+${(tierTotal - baseFee).toFixed(0)} processing</p>}</div>
+              </button>
+            );
+          })}
+        </div>
+        <NavButtons stepIdx={3} />
+      </section>
+    );
+  }
+
+  /* ── STEP: Personal Details (Comprehensive) ──────── */
+  function renderPersonal() {
+    const si = isEta ? 1 : 4;
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Personal Details</h2>
+        <p className="text-sm text-gray-500 mb-6">Enter your personal and passport information exactly as it appears on your passport.</p>
+
+        {isEta && form.nationality && (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-accent/5 border border-accent/20 mb-6">
+            <Globe size={20} className="text-accent shrink-0" />
+            <div><p className="text-sm font-semibold text-accent">Electronic Travel Authorization (ETA)</p><p className="text-xs text-gray-500">Your nationality ({cName(form.nationality)}) qualifies for visa-free entry with ETA — ${etaFee} fee.</p></div>
+          </div>
+        )}
+
+        {/* Personal Information */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">1</span> Personal Information</h3>
+          <div className="grid sm:grid-cols-2 gap-4 pl-8">
+            <FormField label="First name" required><Input value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="John" /></FormField>
+            <FormField label="Last name" required><Input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="Doe" /></FormField>
+            <FormField label="Other names"><Input value={form.other_names} onChange={e => set("other_names", e.target.value)} placeholder="Middle names (if any)" /></FormField>
+            <FormField label="Date of birth" required><Input type="date" value={form.date_of_birth} onChange={e => set("date_of_birth", e.target.value)} /></FormField>
+            <FormField label="Gender">
+              <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.gender} onChange={e => set("gender", e.target.value)}>
+                <option value="">Select</option><option value="male">Male</option><option value="female">Female</option>
+              </select>
+            </FormField>
+            <FormField label="Marital status">
+              <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.marital_status} onChange={e => set("marital_status", e.target.value)}>
+                <option value="">Select</option><option value="single">Single</option><option value="married">Married</option><option value="divorced">Divorced</option><option value="widowed">Widowed</option>
+              </select>
+            </FormField>
+            <FormField label="Place of birth"><Input value={form.place_of_birth} onChange={e => set("place_of_birth", e.target.value)} placeholder="City" /></FormField>
+            <FormField label="Country of birth">
+              <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.country_of_birth} onChange={e => set("country_of_birth", e.target.value)}>
+                <option value="">Select country</option>{countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Nationality" required>
+              <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.nationality} onChange={e => set("nationality", e.target.value)}>
+                <option value="">Select nationality</option>{countries.map(c => <option key={c.code} value={c.code}>{c.nationality}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Occupation"><Input value={form.occupation} onChange={e => set("occupation", e.target.value)} placeholder="e.g. Software Engineer" /></FormField>
+          </div>
+        </div>
+
+        {/* Contact Information */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">2</span> Contact Information</h3>
+          <div className="grid sm:grid-cols-2 gap-4 pl-8">
+            <FormField label="Email address" required><Input type="email" value={form.email} onChange={e => set("email", e.target.value)} placeholder="john@example.com" /></FormField>
+            <FormField label="Phone number"><Input type="tel" value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="+1 234 567 8900" /></FormField>
+            <FormField label="Current address" fullWidth><Input value={form.current_address} onChange={e => set("current_address", e.target.value)} placeholder="Street address" /></FormField>
+            <FormField label="City"><Input value={form.city} onChange={e => set("city", e.target.value)} placeholder="City" /></FormField>
+            <FormField label="State/Province"><Input value={form.state_province} onChange={e => set("state_province", e.target.value)} placeholder="State or Province" /></FormField>
+            <FormField label="Postal code"><Input value={form.postal_code} onChange={e => set("postal_code", e.target.value)} placeholder="Postal/ZIP code" /></FormField>
+            <FormField label="Country of residence">
+              <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.country_of_residence} onChange={e => set("country_of_residence", e.target.value)}>
+                <option value="">Select country</option>{countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </select>
+            </FormField>
+          </div>
+        </div>
+
+        {/* Passport Information */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">3</span> Passport Information</h3>
+          <div className="grid sm:grid-cols-2 gap-4 pl-8">
+            <FormField label="Passport number" required><Input value={form.passport_number} onChange={e => set("passport_number", e.target.value)} placeholder="A12345678" /></FormField>
+            <FormField label="Issuing authority" required hint="e.g. Ministry of Foreign Affairs"><Input value={form.issuing_authority} onChange={e => set("issuing_authority", e.target.value)} placeholder="Issuing authority" /></FormField>
+            <FormField label="Place of issue"><Input value={form.passport_issue_place} onChange={e => set("passport_issue_place", e.target.value)} placeholder="City of issue" /></FormField>
+            <FormField label="Issue date"><Input type="date" value={form.passport_issue_date} onChange={e => set("passport_issue_date", e.target.value)} /></FormField>
+            <FormField label="Expiry date" required><Input type="date" value={form.passport_expiry} onChange={e => set("passport_expiry", e.target.value)} /></FormField>
+          </div>
+
+          {/* Passport validation messages */}
+          <div className="pl-8 mt-4">
+            {passportStatus.level === "expired" && (
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
+                <XCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
+                <div><p className="text-sm font-semibold text-red-700">Passport Expired</p><p className="text-xs text-red-600 mt-1">{passportStatus.msg}</p><p className="text-xs text-red-600 mt-1 font-medium">You cannot continue until you renew your passport.</p></div>
+              </div>
+            )}
+            {passportStatus.level === "warning" && (
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                <div><p className="text-sm font-semibold text-amber-700">Passport Expiry Warning</p><p className="text-xs text-amber-600 mt-1">{passportStatus.msg}</p></div>
+              </div>
+            )}
+            {passportStatus.level === "valid" && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200">
+                <Shield size={16} className="text-green-600 shrink-0" /><span className="text-xs text-green-700">Passport validity verified — valid for travel.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Employment (for non-ETA) */}
+        {!isEta && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">4</span> Employment Information</h3>
+            <div className="grid sm:grid-cols-2 gap-4 pl-8">
+              <FormField label="Employer name"><Input value={form.employer_name} onChange={e => set("employer_name", e.target.value)} placeholder="Company name" /></FormField>
+              <FormField label="Employer phone"><Input type="tel" value={form.employer_phone} onChange={e => set("employer_phone", e.target.value)} placeholder="+1 234 567 8900" /></FormField>
+              <FormField label="Employer address" fullWidth><Input value={form.employer_address} onChange={e => set("employer_address", e.target.value)} placeholder="Full address" /></FormField>
+            </div>
+          </div>
+        )}
+
+        <NavButtons stepIdx={si} />
+      </section>
+    );
+  }
+
+  /* ── STEP: Travel Details (Comprehensive) ────────── */
+  function renderTravel() {
+    const si = isEta ? 2 : 5;
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Travel Details</h2>
+        <p className="text-sm text-gray-500 mb-6">Provide details about your trip to Ghana.</p>
+
+        {/* Trip Information */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">1</span> Trip Information</h3>
+          <div className="grid sm:grid-cols-2 gap-4 pl-8">
+            <FormField label="Intended arrival date" required><Input type="date" value={form.intended_arrival} onChange={e => set("intended_arrival", e.target.value)} /></FormField>
+            <FormField label="Return date"><Input type="date" value={form.return_date} onChange={e => set("return_date", e.target.value)} /></FormField>
+            {!isEta && (
+              <FormField label="Visa duration" required>
+                <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.visa_duration} onChange={e => set("visa_duration", e.target.value)}>
+                  <option value="">Select duration</option>
+                  {VISA_DURATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </FormField>
+            )}
+            <FormField label="Duration of stay (days)" required><Input type="number" min="1" max="90" value={form.duration_days} onChange={e => set("duration_days", e.target.value)} placeholder="30" /></FormField>
+            <FormField label="Port of entry" required>
+              <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.port_of_entry} onChange={e => set("port_of_entry", e.target.value)}>
+                <option value="">Select port</option>
+                {PORTS_OF_ENTRY.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Place of embarkation"><Input value={form.place_of_embarkation} onChange={e => set("place_of_embarkation", e.target.value)} placeholder="e.g. London, UK" /></FormField>
+            {!isEta && (
+              <FormField label="Destination city in Ghana">
+                <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.destination_city} onChange={e => set("destination_city", e.target.value)}>
+                  <option value="">Select city</option>
+                  {DESTINATION_CITIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </FormField>
+            )}
+          </div>
+        </div>
+
+        {/* Flight Information */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">2</span> Flight Information</h3>
+          <div className="grid sm:grid-cols-2 gap-4 pl-8">
+            <FormField label="Airline"><Input value={form.airline} onChange={e => set("airline", e.target.value)} placeholder="e.g. Kenya Airways" /></FormField>
+            <FormField label="Flight number"><Input value={form.flight_number} onChange={e => set("flight_number", e.target.value)} placeholder="e.g. KQ507" /></FormField>
+          </div>
+        </div>
+
+        {/* Accommodation */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">3</span> Accommodation in Ghana</h3>
+          <div className="grid sm:grid-cols-2 gap-4 pl-8">
+            {!isEta && (
+              <FormField label="Accommodation type">
+                <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.accommodation_type} onChange={e => set("accommodation_type", e.target.value)}>
+                  <option value="">Select type</option>
+                  {ACCOMMODATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </FormField>
+            )}
+            <FormField label="Address in Ghana" required fullWidth={isEta}><Input value={form.address_in_ghana} onChange={e => set("address_in_ghana", e.target.value)} placeholder="Hotel or host address" /></FormField>
+            <FormField label="Hotel name"><Input value={form.hotel_name} onChange={e => set("hotel_name", e.target.value)} placeholder="Hotel name (if applicable)" /></FormField>
+            <FormField label="Booking reference"><Input value={form.hotel_booking_reference} onChange={e => set("hotel_booking_reference", e.target.value)} placeholder="Booking confirmation number" /></FormField>
+          </div>
+        </div>
+
+        {/* Host/Sponsor Information */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">4</span> Host/Sponsor Information (if applicable)</h3>
+          <div className="grid sm:grid-cols-2 gap-4 pl-8">
+            <FormField label="Host name"><Input value={form.host_name} onChange={e => set("host_name", e.target.value)} placeholder="Full name of host" /></FormField>
+            <FormField label="Host phone"><Input type="tel" value={form.host_phone} onChange={e => set("host_phone", e.target.value)} placeholder="+233 XX XXX XXXX" /></FormField>
+            <FormField label="Host address" fullWidth><Input value={form.host_address} onChange={e => set("host_address", e.target.value)} placeholder="Host's address in Ghana" /></FormField>
+            <FormField label="Relationship to host"><Input value={form.host_relationship} onChange={e => set("host_relationship", e.target.value)} placeholder="e.g. Friend, Family, Business contact" /></FormField>
+          </div>
+        </div>
+
+        {/* Purpose of Visit */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">5</span> Purpose of Visit</h3>
+          <div className="grid sm:grid-cols-2 gap-4 pl-8">
+            <FormField label="Purpose of visit" required>
+              <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.purpose_of_visit} onChange={e => set("purpose_of_visit", e.target.value)}>
+                <option value="">Select purpose</option>
+                {PURPOSE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Additional details" fullWidth><textarea className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 min-h-[80px]" value={form.purpose_details} onChange={e => set("purpose_details", e.target.value)} placeholder="Describe your purpose for visiting Ghana..." /></FormField>
+          </div>
+        </div>
+
+        {/* Business-specific fields */}
+        {isBusiness && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">6</span> Business Information</h3>
+            <div className="grid sm:grid-cols-2 gap-4 pl-8">
+              <FormField label="Your company/organisation"><Input value={form.company_name} onChange={e => set("company_name", e.target.value)} placeholder="e.g. Acme Corporation Ltd" /></FormField>
+              <FormField label="Your position/title"><Input value={form.job_title} onChange={e => set("job_title", e.target.value)} placeholder="e.g. Regional Director" /></FormField>
+              <FormField label="Company address" fullWidth><Input value={form.company_address} onChange={e => set("company_address", e.target.value)} placeholder="Full registered address" /></FormField>
+              <FormField label="Host company in Ghana"><Input value={form.host_company_name} onChange={e => set("host_company_name", e.target.value)} placeholder="Company you are visiting" /></FormField>
+              <FormField label="Host company address" fullWidth><Input value={form.host_company_address} onChange={e => set("host_company_address", e.target.value)} placeholder="Full address in Ghana" /></FormField>
+              <FormField label="Contact person at host"><Input value={form.host_contact_name} onChange={e => set("host_contact_name", e.target.value)} placeholder="Full name" /></FormField>
+              <FormField label="Contact phone"><Input type="tel" value={form.host_contact_phone} onChange={e => set("host_contact_phone", e.target.value)} placeholder="+233 XX XXX XXXX" /></FormField>
+              <FormField label="Nature of business">
+                <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.business_purpose} onChange={e => set("business_purpose", e.target.value)}>
+                  <option value="">Select</option>
+                  <option value="meetings">Business Meetings</option>
+                  <option value="negotiation">Contract Negotiation</option>
+                  <option value="trade">Trade & Export/Import</option>
+                  <option value="investment">Investment Exploration</option>
+                  <option value="consulting">Consulting/Advisory</option>
+                  <option value="other">Other</option>
+                </select>
+              </FormField>
+              <FormField label="Business activity details" fullWidth><textarea className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 min-h-[80px]" value={form.business_details} onChange={e => set("business_details", e.target.value)} placeholder="Describe planned business activities..." /></FormField>
+            </div>
+          </div>
+        )}
+
+        {/* Travel History */}
+        {!isEta && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-xs flex items-center justify-center font-bold">{isBusiness ? "7" : "6"}</span> Travel History</h3>
+            <div className="grid sm:grid-cols-2 gap-4 pl-8">
+              <FormField label="Have you visited Ghana before?">
+                <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.visited_ghana_before} onChange={e => set("visited_ghana_before", e.target.value)}>
+                  <option value="">Select</option><option value="no">No</option><option value="yes">Yes</option>
+                </select>
+              </FormField>
+              {form.visited_ghana_before === "yes" && (
+                <FormField label="Previous visa number"><Input value={form.previous_visa_number} onChange={e => set("previous_visa_number", e.target.value)} placeholder="If known" /></FormField>
+              )}
+              <FormField label="Visited other countries in past 6 months?">
+                <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.visited_other_countries} onChange={e => set("visited_other_countries", e.target.value)}>
+                  <option value="">Select</option><option value="no">No</option><option value="yes">Yes</option>
+                </select>
+              </FormField>
+              {form.visited_other_countries === "yes" && (
+                <>
+                  <FormField label="Country 1">
+                    <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.visited_country_1} onChange={e => set("visited_country_1", e.target.value)}>
+                      <option value="">Select country</option>{countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Country 2">
+                    <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.visited_country_2} onChange={e => set("visited_country_2", e.target.value)}>
+                      <option value="">Select country</option>{countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Country 3">
+                    <select className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.visited_country_3} onChange={e => set("visited_country_3", e.target.value)}>
+                      <option value="">Select country</option>{countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                    </select>
+                  </FormField>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        <NavButtons stepIdx={si} />
+      </section>
+    );
+  }
+
+  /* ── STEP: Declarations ──────────────────────────── */
+  function renderDeclarations() {
+    const si = isEta ? 3 : 6;
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Declarations</h2>
+        <p className="text-sm text-gray-500 mb-6">Please answer the following questions truthfully. False declarations may result in visa denial or revocation.</p>
+
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5">
+                <select className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.entry_denied_before} onChange={e => set("entry_denied_before", e.target.value)}>
+                  <option value="">Select</option><option value="no">No</option><option value="yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Have you ever been denied entry to Ghana or any other country?</p>
+                <p className="text-xs text-gray-500 mt-1">Include visa refusals, deportations, or entry denials at any border.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5">
+                <select className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.criminal_conviction} onChange={e => set("criminal_conviction", e.target.value)}>
+                  <option value="">Select</option><option value="no">No</option><option value="yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Do you have any criminal convictions?</p>
+                <p className="text-xs text-gray-500 mt-1">Include convictions in any country, regardless of how long ago.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5">
+                <select className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.overstayed_before} onChange={e => set("overstayed_before", e.target.value)}>
+                  <option value="">Select</option><option value="no">No</option><option value="yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Have you ever overstayed a visa or violated immigration conditions?</p>
+                <p className="text-xs text-gray-500 mt-1">In Ghana or any other country.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5">
+                <select className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={form.health_issues} onChange={e => set("health_issues", e.target.value)}>
+                  <option value="">Select</option><option value="no">No</option><option value="yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Do you have any communicable diseases or serious health conditions?</p>
+                <p className="text-xs text-gray-500 mt-1">That may require medical attention during your stay.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">Important Notice</p>
+              <p className="text-xs text-amber-700 mt-1">By proceeding, you confirm that all information provided is true and accurate. Providing false information is a criminal offense and may result in visa denial, deportation, or future travel bans.</p>
+            </div>
+          </div>
+        </div>
+
+        <NavButtons stepIdx={si} />
+      </section>
+    );
+  }
+
+  /* ── STEP: Documents ─────────────────────────────── */
+  function renderDocs() {
+    const si = isEta ? 4 : 7;
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Upload Documents</h2>
+        <p className="text-sm text-gray-500 mb-6">Upload the required supporting documents. Accepted formats: PDF, JPG, PNG (max 10MB each).</p>
+
+        <div className="space-y-4">
+          {currentDocTypes.map(doc => {
+            const up = !!docs[doc.key];
+            return (
+              <div key={doc.key} className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${up ? "border-green-200 bg-green-50" : "border-gray-200 hover:border-gray-300"}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${up ? "bg-green-100" : "bg-gray-100"}`}>
+                    {up ? <Check size={18} className="text-green-600" /> : <FileText size={18} className="text-gray-400" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{doc.label}</p>
+                    <p className="text-xs text-gray-500">{doc.desc}</p>
+                    {up && <p className="text-xs text-green-600 mt-0.5">{docs[doc.key]?.name}</p>}
+                  </div>
+                </div>
+                <label className={`px-4 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${up ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-accent/10 text-accent hover:bg-accent/20"}`}>
+                  {up ? "Replace" : "Upload"}
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e => handleFile(doc.key, e.target.files?.[0] ?? null)} />
+                </label>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
+          <div className="flex items-start gap-3">
+            <Shield size={18} className="text-blue-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-blue-800">Document Security</p>
+              <p className="text-xs text-blue-700 mt-1">Your documents are encrypted and securely stored. They will only be accessed by authorized immigration officers for visa processing.</p>
+            </div>
+          </div>
+        </div>
+
+        <NavButtons stepIdx={si} />
+      </section>
+    );
+  }
+
+  /* ── STEP: Review & Pay ──────────────────────────── */
+  function renderReview() {
+    return (
+      <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Review Your Application</h2>
+          <p className="text-sm text-gray-500">Please verify all details before proceeding to payment.</p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <ReviewCard title="Visa Options">
+            <ReviewRow label="Channel" value="E-Visa" />
+            {!isEta && <ReviewRow label="Type" value={selVT?.name} />}
+            {!isEta && <ReviewRow label="Entry" value={form.entry_type} capitalize />}
+            {!isEta && <ReviewRow label="Processing" value={selST?.name} />}
+            {isEta && <ReviewRow label="Authorization" value="ETA (Visa-Free)" />}
+          </ReviewCard>
+
+          <ReviewCard title="Personal Details">
+            <ReviewRow label="Name" value={`${form.first_name} ${form.last_name}`.trim()} />
+            <ReviewRow label="Nationality" value={cName(form.nationality)} />
+            <ReviewRow label="Date of Birth" value={fmtDate(form.date_of_birth)} />
+            <ReviewRow label="Email" value={form.email} />
+          </ReviewCard>
+
+          <ReviewCard title="Passport">
+            <ReviewRow label="Number" value={form.passport_number} />
+            <ReviewRow label="Issuing Authority" value={form.issuing_authority} />
+            <ReviewRow label="Expiry" value={fmtDate(form.passport_expiry)} />
+          </ReviewCard>
+
+          <ReviewCard title="Travel">
+            <ReviewRow label="Arrival" value={fmtDate(form.intended_arrival)} />
+            <ReviewRow label="Duration" value={form.duration_days ? `${form.duration_days} days` : undefined} />
+            <ReviewRow label="Port of Entry" value={form.port_of_entry} />
+            <ReviewRow label="Address" value={form.address_in_ghana} />
+          </ReviewCard>
+
+          <ReviewCard title="Documents">
+            {currentDocTypes.map(d => (
+              <div key={d.key} className="flex justify-between items-center">
+                <span className="text-gray-500">{d.label}</span>
+                {docs[d.key] ? <Check size={14} className="text-green-500" /> : <span className="text-xs text-gray-300">—</span>}
+              </div>
+            ))}
+          </ReviewCard>
+
+          <ReviewCard title="Declarations">
+            <ReviewRow label="Entry denied before" value={form.entry_denied_before || "Not answered"} capitalize />
+            <ReviewRow label="Criminal conviction" value={form.criminal_conviction || "Not answered"} capitalize />
+            <ReviewRow label="Overstayed before" value={form.overstayed_before || "Not answered"} capitalize />
+          </ReviewCard>
+        </div>
+
+        {/* Fee breakdown */}
+        <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
+          <p className="text-[10px] font-semibold text-accent uppercase tracking-wider mb-3">Fee Breakdown</p>
+          <div className="space-y-2 text-sm">
+            {isEta ? (
+              <div className="flex justify-between"><span className="text-gray-600">ETA Registration Fee</span><span className="font-medium">${etaFee.toFixed(2)}</span></div>
+            ) : (
+              <>
+                <div className="flex justify-between"><span className="text-gray-600">Base fee ({form.entry_type === "multiple" ? "Multiple" : "Single"} entry)</span><span className="font-medium">${baseFee.toFixed(2)}</span></div>
+                {procFee > 0 && <div className="flex justify-between"><span className="text-gray-600">Processing ({selST?.name})</span><span className="font-medium">+${procFee.toFixed(2)}</span></div>}
+              </>
+            )}
+            <div className="flex justify-between pt-2 border-t border-accent/20">
+              <span className="font-semibold text-gray-900">Total</span>
+              <span className="text-xl font-bold text-accent">${totalFee.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <Button className="w-full !bg-accent hover:!bg-accent/90 !py-3" onClick={() => setShowPay(true)} disabled={submitting}>
+          <CreditCard size={16} className="mr-2" /> Proceed to Payment — ${totalFee.toFixed(2)}
+        </Button>
+
+        <NavButtons stepIdx={STEPS.length - 1} />
+      </section>
+    );
+  }
+
+  /* ── Main return ─────────────────────────────────── */
+  return (
+    <DashboardShell title="New E-Visa Application" description="Complete each step to submit your visa application.">
+      {/* Centered Wizard Stepper */}
+      <div className="flex justify-center mb-8">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 px-2">
+          {STEPS.map((label, i) => {
+            const done = i < step;
+            const active = i === step;
+            return (
+              <div key={label} className="flex items-center gap-1.5 shrink-0">
+                <button type="button" onClick={() => { if (done) setStep(i); }}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${done ? "bg-accent text-white cursor-pointer hover:ring-2 hover:ring-accent/30" : active ? "bg-primary text-white ring-4 ring-primary/15" : "bg-gray-100 text-gray-400 cursor-default"}`}>
+                  {done ? <Check size={13} strokeWidth={3} /> : i + 1}
+                </button>
+                <span className={`text-xs font-medium hidden md:inline whitespace-nowrap ${active ? "text-primary font-semibold" : done ? "text-accent" : "text-gray-400"}`}>{label}</span>
+                {i < STEPS.length - 1 && <div className={`w-6 lg:w-10 h-0.5 rounded ${done ? "bg-accent" : "bg-gray-200"}`} />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 50/50 Grid: Form + Preview */}
+      <div className="grid lg:grid-cols-2 gap-6 items-start">
+        <div className="space-y-4">
+          <StepTransition stepKey={step}>{renderStepContent()}</StepTransition>
+          {error && <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700"><AlertTriangle size={14} className="shrink-0" />{error}</div>}
+        </div>
+        <div className="lg:sticky lg:top-6">
+          <VisaPreviewSidebar form={form} selVT={selVT} selST={selST} documents={docs} cName={cName} fmtDate={fmtDate} docTypes={currentDocTypes} />
+        </div>
+      </div>
+
+      <PaymentModal
+        open={showPay}
+        onClose={() => setShowPay(false)}
+        onPay={async () => { await handleSubmit(); setShowPay(false); }}
+        totalFee={totalFee}
+        breakdown={[
+          { label: isEta ? "ETA Registration Fee" : `Base Fee (${form.entry_type === "multiple" ? "Multiple" : "Single"} entry)`, amount: baseFee },
+          ...(procFee > 0 ? [{ label: `Processing (${selST?.name})`, amount: procFee }] : [])
+        ].filter(b => b.amount > 0)}
+        visaTypeName={isEta ? "ETA" : selVT?.name ?? "Visa"}
+        applicantName={form.first_name && form.last_name ? `${form.first_name} ${form.last_name}` : "Applicant"}
+        referenceNumber={undefined}
+      />
+    </DashboardShell>
+  );
+}

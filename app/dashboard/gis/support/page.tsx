@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import {
@@ -85,8 +86,8 @@ export default function GisSupportPage() {
             title="Support Inbox"
             description={`${unreadCount > 0 ? `${unreadCount} ticket${unreadCount > 1 ? "s" : ""} with new messages · ` : ""}Manage applicant support requests`}
         >
-            {/* Filters */}
-            <div className="card mb-6">
+            {/* Filters - Matching main dashboard card style */}
+            <Card variant="default" className="mb-6">
                 <div className="grid sm:grid-cols-2 gap-4">
                     <Select
                         label="Filter by Status"
@@ -116,30 +117,33 @@ export default function GisSupportPage() {
                         ]}
                     />
                 </div>
-            </div>
+            </Card>
 
             {/* Ticket List */}
             {isLoading ? (
-                <div className="card text-center py-12">
+                <Card variant="default" className="text-center py-12">
                     <Clock size={24} className="text-text-muted mx-auto mb-3 animate-spin" />
                     <p className="text-sm text-text-muted">Loading tickets...</p>
-                </div>
+                </Card>
             ) : tickets.length === 0 ? (
-                <div className="card text-center py-16">
-                    <Inbox size={32} className="text-text-muted mx-auto mb-3" />
+                <Card variant="default" className="text-center py-16">
+                    <div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <Inbox size={24} className="text-text-muted" />
+                    </div>
                     <p className="font-semibold text-text-primary mb-1">No tickets found</p>
                     <p className="text-sm text-text-muted">Support tickets from applicants will appear here.</p>
-                </div>
+                </Card>
             ) : (
                 <div className="space-y-3">
                     {tickets.map((ticket) => (
-                        <button
+                        <Card
                             key={ticket.id}
+                            variant="interactive"
                             onClick={() => router.push(`/dashboard/gis/support/${ticket.id}`)}
-                            className={`w-full card hover:border-accent/30 transition-all cursor-pointer text-left ${ticket.messages_count > 0 ? "border-accent/20 bg-accent/2" : ""}`}
+                            className={`${ticket.messages_count > 0 ? "border-accent/30 bg-accent/5" : ""}`}
                         >
                             <div className="flex items-start gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${ticket.reason === "appeal" ? "bg-orange-100" : "bg-surface"}`}>
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${ticket.reason === "appeal" ? "bg-orange-100" : "bg-surface"}`}>
                                     {ticket.reason === "appeal" ? (
                                         <AlertTriangle size={18} className="text-orange-600" />
                                     ) : (
@@ -174,7 +178,7 @@ export default function GisSupportPage() {
                                     </span>
                                 </div>
                             </div>
-                        </button>
+                        </Card>
                     ))}
                 </div>
             )}

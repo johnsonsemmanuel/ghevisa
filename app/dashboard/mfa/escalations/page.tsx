@@ -8,6 +8,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Select } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
+import { RiskBadge } from "@/components/ui/risk-badge";
 import type { Application, PaginatedResponse } from "@/lib/types";
 
 export default function MfaEscalationsPage() {
@@ -65,6 +66,13 @@ export default function MfaEscalationsPage() {
           </span>
         );
       },
+    },
+    {
+      key: "risk_level",
+      header: "Risk Level",
+      render: (row: Application) => (
+        <RiskBadge level={row.riskAssessment?.risk_level ?? null} />
+      ),
     },
     {
       key: "status",

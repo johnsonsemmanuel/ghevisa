@@ -6,14 +6,12 @@ import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
-import { Timeline } from "@/components/ui/timeline";
 import { CardSkeleton } from "@/components/ui/skeleton";
-
 import { FileUpload } from "@/components/ui/file-upload";
 import {
   ArrowLeft, Download, FileText, Clock, User, Plane,
   CreditCard, Upload, Eye, Edit, CheckCircle2, Shield, MessageSquare,
-  AlertCircle, Send,
+  AlertCircle, Send, X,
 } from "lucide-react";
 import { EVisaPreview } from "@/components/ui/evisa-preview";
 import toast from "react-hot-toast";
@@ -85,6 +83,7 @@ export default function ApplicationDetailPage() {
 
   const application = appData?.application;
   const timeline = statusData?.timeline || [];
+  const currentStatus = application?.status ?? "draft";
 
   const handleDownloadEvisa = async () => {
     try {
@@ -173,7 +172,7 @@ export default function ApplicationDetailPage() {
       }
     >
       {/* ── Status Hero Banner ── */}
-      <div className={`rounded-2xl bg-gradient-to-br ${statusGradient[application.status] || statusGradient.draft} border p-6 mb-6`}>
+      <div className={`rounded-2xl bg-gradient-to-br ${statusGradient[application.status] || statusGradient.draft} border p-6 mb-4`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-white/80 flex items-center justify-center shadow-sm">
@@ -320,198 +319,305 @@ export default function ApplicationDetailPage() {
         </div>
       )}
 
-      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6 w-full">
-          {/* Personal Info */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Applicant Profile Card */}
           <div className="card">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-primary/6 flex items-center justify-center">
-                <User size={16} className="text-primary" />
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
+                {application.first_name?.[0]}{application.last_name?.[0]}
               </div>
-              <h2 className="text-base font-bold text-text-primary">Personal Information</h2>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-text-primary">
+                  {application.first_name} {application.last_name}
+                </h2>
+                <p className="text-sm text-text-muted">{application.email}</p>
+                {application.phone && (
+                  <p className="text-sm text-text-muted">{application.phone}</p>
+                )}
+              </div>
+              <StatusBadge status={application.status} />
             </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="info-field"><p className="info-label">Full Name</p><p className="info-value">{application.first_name} {application.last_name}</p></div>
-              <div className="info-field"><p className="info-label">Date of Birth</p><p className="info-value">{application.date_of_birth ? new Date(application.date_of_birth).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "—"}</p></div>
-              <div className="info-field"><p className="info-label">Gender</p><p className="info-value capitalize">{application.gender || "—"}</p></div>
-              <div className="info-field"><p className="info-label">Place of Birth</p><p className="info-value uppercase">{application.country_of_birth || "—"}</p></div>
-              <div className="info-field"><p className="info-label">Nationality</p><p className="info-value">{application.nationality || "—"}</p></div>
-              <div className="info-field"><p className="info-label">Marital Status</p><p className="info-value capitalize">{application.marital_status || "—"}</p></div>
-              <div className="info-field"><p className="info-label">Occupation</p><p className="info-value capitalize">{application.profession || "—"}</p></div>
-              <div className="info-field"><p className="info-label">Passport Number</p><p className="info-value font-mono tracking-wide">{application.passport_number || "—"}</p></div>
-              <div className="info-field"><p className="info-label">Passport Issue Date</p><p className="info-value">{application.passport_issue_date || "—"}</p></div>
-              <div className="info-field"><p className="info-label">Passport Expiry Date</p><p className="info-value">{application.passport_expiry || "—"}</p></div>
+
+            <div className="grid sm:grid-cols-3 gap-4 text-sm border-t border-border pt-4">
+              <div>
+                <p className="text-text-muted mb-0.5">Gender</p>
+                <p className="text-text-primary font-medium capitalize">{application.gender || "—"}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Date of Birth</p>
+                <p className="text-text-primary font-medium">
+                  {application.date_of_birth ? new Date(application.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Marital Status</p>
+                <p className="text-text-primary font-medium capitalize">{application.marital_status || "—"}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Occupation</p>
+                <p className="text-text-primary font-medium">{application.profession || "—"}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Nationality</p>
+                <p className="text-text-primary font-medium">{application.nationality}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Passport Number</p>
+                <p className="text-text-primary font-medium font-mono">{application.passport_number}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Passport Issue Date</p>
+                <p className="text-text-primary font-medium">
+                  {application.passport_issue_date ? new Date(application.passport_issue_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Passport Expiry Date</p>
+                <p className="text-text-primary font-medium">
+                  {application.passport_expiry ? new Date(application.passport_expiry).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Place of Birth</p>
+                <p className="text-text-primary font-medium">{application.country_of_birth || "—"}</p>
+              </div>
             </div>
           </div>
 
           {/* Travel Details */}
           <div className="card">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-accent/8 flex items-center justify-center">
-                <Plane size={16} className="text-accent" />
-              </div>
-              <h2 className="text-base font-bold text-text-primary">Travel Details</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <Plane size={18} className="text-text-muted" />
+              <h2 className="text-lg font-semibold text-text-primary">Travel Details</h2>
             </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="info-field"><p className="info-label">Intended Arrival</p><p className="info-value">{application.intended_arrival ? new Date(application.intended_arrival).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "—"}</p></div>
-              <div className="info-field"><p className="info-label">Duration of Stay</p><p className="info-value">{application.duration_days ? `${application.duration_days} days` : "—"}</p></div>
-              <div className="info-field sm:col-span-2"><p className="info-label">Port of Entry</p><p className="info-value">{application.port_of_entry || "—"}</p></div>
-              <div className="info-field sm:col-span-2"><p className="info-label">Address in Ghana</p><p className="info-value">{application.address_in_ghana || "—"}</p></div>
-              <div className="info-field sm:col-span-2"><p className="info-label">Purpose of Visit</p><p className="info-value">{application.purpose_of_visit || "—"}</p></div>
-              {(application.visited_country_1 || application.visited_country_2 || application.visited_country_3) && (
-                <div className="info-field sm:col-span-2">
-                  <p className="info-label">Recently Visited Countries</p>
-                  <p className="info-value">
-                    {[application.visited_country_1, application.visited_country_2, application.visited_country_3].filter(Boolean).join(", ")}
-                  </p>
-                </div>
-              )}
+            <div className="grid sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-text-muted mb-0.5">Arrival</p>
+                <p className="text-text-primary font-medium">
+                  {application.intended_arrival ? new Date(application.intended_arrival).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Duration</p>
+                <p className="text-text-primary font-medium">{application.duration_days ? `${application.duration_days} days` : "—"}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Port of Entry</p>
+                <p className="text-text-primary font-medium">{application.port_of_entry || "—"}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-text-muted mb-0.5">Address in Ghana</p>
+                <p className="text-text-primary font-medium">{application.address_in_ghana || "—"}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-text-muted mb-0.5">Purpose</p>
+                <p className="text-text-primary font-medium">{application.purpose_of_visit || "—"}</p>
+              </div>
             </div>
           </div>
 
           {/* Health & Security Declarations */}
           <div className="card">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-success/8 flex items-center justify-center">
-                <CheckCircle2 size={16} className="text-success" />
-              </div>
-              <h2 className="text-base font-bold text-text-primary">Health & Security Declarations</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <Shield size={18} className="text-text-muted" />
+              <h2 className="text-lg font-semibold text-text-primary">Health & Security Declarations</h2>
             </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="info-field">
-                <p className="info-label">High Fever</p>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${application.health_declaration_fever ? 'bg-error-main' : 'bg-success-main'}`}></div>
-                  <p className="info-value">{application.health_declaration_fever ? "Yes" : "No"}</p>
-                </div>
+            <div className="grid sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-text-muted mb-0.5">High Fever</p>
+                <p className="text-text-primary font-medium">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    application.health_declaration_fever ? "bg-danger/10 text-danger" : "bg-success/10 text-success"
+                  }`}>
+                    {application.health_declaration_fever ? <X size={12} /> : <CheckCircle2 size={12} />}
+                    {application.health_declaration_fever ? "Yes" : "No"}
+                  </span>
+                </p>
               </div>
-              <div className="info-field">
-                <p className="info-label">Coughing / Breathing Difficulties</p>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${application.health_declaration_cough ? 'bg-error-main' : 'bg-success-main'}`}></div>
-                  <p className="info-value">{application.health_declaration_cough || application.health_declaration_breathing ? "Yes" : "No"}</p>
-                </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Coughing / Breathing Difficulties</p>
+                <p className="text-text-primary font-medium">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    application.health_declaration_cough || application.health_declaration_breathing ? "bg-danger/10 text-danger" : "bg-success/10 text-success"
+                  }`}>
+                    {(application.health_declaration_cough || application.health_declaration_breathing) ? <X size={12} /> : <CheckCircle2 size={12} />}
+                    {(application.health_declaration_cough || application.health_declaration_breathing) ? "Yes" : "No"}
+                  </span>
+                </p>
               </div>
-              <div className="info-field">
-                <p className="info-label">Yellow Fever Immunization</p>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${application.health_declaration_yellow_fever ? 'bg-success-main' : 'bg-error-main'}`}></div>
-                  <p className="info-value">{application.health_declaration_yellow_fever ? "Yes" : "No"}</p>
-                </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Yellow Fever Immunization</p>
+                <p className="text-text-primary font-medium">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    application.health_declaration_yellow_fever ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                  }`}>
+                    {application.health_declaration_yellow_fever ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                    {application.health_declaration_yellow_fever ? "Yes" : "No"}
+                  </span>
+                </p>
               </div>
-              <div className="info-field">
-                <p className="info-label">Criminal Conviction</p>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${application.security_declaration_convicted ? 'bg-error-main' : 'bg-success-main'}`}></div>
-                  <p className="info-value">{application.security_declaration_convicted ? "Yes" : "No"}</p>
-                </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Criminal Conviction</p>
+                <p className="text-text-primary font-medium">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    application.security_declaration_convicted ? "bg-danger/10 text-danger" : "bg-success/10 text-success"
+                  }`}>
+                    {application.security_declaration_convicted ? <X size={12} /> : <CheckCircle2 size={12} />}
+                    {application.security_declaration_convicted ? "Yes" : "No"}
+                  </span>
+                </p>
               </div>
             </div>
           </div>
 
           {/* Documents */}
           <div className="card">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-info/8 flex items-center justify-center">
-                <FileText size={16} className="text-info" />
-              </div>
-              <h2 className="text-base font-bold text-text-primary">Documents</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <FileText size={18} className="text-text-muted" />
+              <h2 className="text-lg font-semibold text-text-primary">Documents</h2>
             </div>
             {application.documents && application.documents.length > 0 ? (
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-3">
                 {application.documents.map((doc) => (
-                  <div key={doc.id} className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-border-light">
-                    <div className="w-10 h-10 bg-white rounded-xl border border-border flex items-center justify-center shrink-0 shadow-sm">
-                      <FileText size={18} className="text-info" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-text-primary capitalize truncate">{doc.document_type.replace(/_/g, " ")}</p>
-                      <p className="text-xs text-text-muted truncate mt-0.5">{doc.original_filename}</p>
-                      <div className="mt-2">
-                        {doc.verification_status === "reupload_requested" || doc.ocr_status === "failed" ? (
-                          <FileUpload accept=".jpeg,.jpg,.png,.pdf" onFileSelect={(file) => handleReupload(doc.id, file)} />
-                        ) : (
-                          <span className={`badge text-[11px] ${doc.verification_status === "verified" ? "badge-success" : doc.verification_status === "rejected" ? "badge-danger" : "badge-info"}`}>
-                            {doc.verification_status || "Pending"}
-                          </span>
-                        )}
+                  <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg bg-surface border border-border">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-info/10 rounded-lg flex items-center justify-center">
+                        <FileText size={16} className="text-info" />
                       </div>
+                      <div>
+                        <p className="text-sm font-medium text-text-primary capitalize">{doc.document_type.replace(/_/g, " ")}</p>
+                        <p className="text-xs text-text-muted">{doc.original_filename} &middot; {(doc.file_size / 1024).toFixed(0)}KB</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {doc.verification_status === "reupload_requested" || doc.ocr_status === "failed" ? (
+                        <FileUpload accept=".jpeg,.jpg,.png,.pdf" onFileSelect={(file) => handleReupload(doc.id, file)} />
+                      ) : (
+                        <span className={`badge ${doc.verification_status === "verified" ? "badge-success" : doc.verification_status === "rejected" ? "badge-danger" : "badge-info"}`}>
+                          {doc.verification_status || "Pending"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Upload size={20} className="text-text-muted" />
-                </div>
-                <p className="text-sm text-text-muted">No documents uploaded yet</p>
-              </div>
+              <p className="text-sm text-text-muted text-center py-4">No documents uploaded</p>
             )}
           </div>
 
-          {/* Payment */}
+          {/* Payment Details */}
           {application.payment && (
             <div className="card">
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-gold/8 flex items-center justify-center">
-                  <CreditCard size={16} className="text-gold" />
-                </div>
-                <h2 className="text-base font-bold text-text-primary">Payment</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <CreditCard size={18} className="text-text-muted" />
+                <h2 className="text-lg font-semibold text-text-primary">Payment Details</h2>
               </div>
-              <div className="grid sm:grid-cols-3 gap-3">
-                <div className="info-field">
-                  <p className="info-label">Amount</p>
-                  <p className="info-value text-lg">{application.payment.currency} {application.payment.amount}</p>
-                </div>
-                <div className="info-field">
-                  <p className="info-label">Status</p>
-                  <div className="mt-1">
-                    <span className={`badge ${application.payment.status === "completed" ? "badge-success" : application.payment.status === "failed" ? "badge-danger" : "badge-warning"}`}>
-                      {application.payment.status}
-                    </span>
-                  </div>
-                </div>
-                <div className="info-field">
-                  <p className="info-label">Reference</p>
-                  <p className="info-value text-xs font-mono">{application.payment.transaction_reference}</p>
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 px-3 text-text-muted font-medium">Amount Paid</th>
+                      <th className="text-left py-2 px-3 text-text-muted font-medium">Reference</th>
+                      <th className="text-left py-2 px-3 text-text-muted font-medium">Provider</th>
+                      <th className="text-left py-2 px-3 text-text-muted font-medium">Status</th>
+                      <th className="text-left py-2 px-3 text-text-muted font-medium">Payment Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border">
+                      <td className="py-3 px-3 font-bold text-text-primary">
+                        {application.payment.currency} {application.payment.amount}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-xs text-text-secondary">
+                        {application.payment.transaction_reference}
+                      </td>
+                      <td className="py-3 px-3 capitalize text-text-secondary">
+                        {application.payment.payment_provider}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${application.payment.status === "completed"
+                          ? "bg-success/10 text-success"
+                          : application.payment.status === "failed"
+                            ? "bg-danger/10 text-danger"
+                            : "bg-warning/10 text-warning"
+                          }`}>
+                          <CheckCircle2 size={12} />
+                          {application.payment.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-text-secondary">
+                        {application.payment.paid_at
+                          ? new Date(application.payment.paid_at).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })
+                          : "—"}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6 w-full">
+        {/* Right Sidebar */}
+        <div className="space-y-6">
           {/* Timeline */}
-          <div className="card">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-gold/8 flex items-center justify-center">
-                <Clock size={16} className="text-gold" />
+          {statusData && statusData.timeline && statusData.timeline.length > 0 && (
+            <div className="card">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock size={18} className="text-text-muted" />
+                <h2 className="text-lg font-semibold text-text-primary">Timeline</h2>
               </div>
-              <h2 className="text-base font-bold text-text-primary">Timeline</h2>
+              <div className="space-y-3">
+                {statusData.timeline.map((item, index) => (
+                  <div key={index} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                        <Clock size={14} className="text-accent" />
+                      </div>
+                      {index !== statusData.timeline.length - 1 && (
+                        <div className="w-0.5 flex-1 bg-border mt-2" />
+                      )}
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <StatusBadge status={item.status} />
+                        <span className="text-xs text-text-muted">
+                          {new Date(item.changed_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      {item.notes && (
+                        <p className="text-sm text-text-secondary mt-1">{item.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            {timeline.length > 0 ? (
-              <Timeline items={timeline} />
-            ) : (
-              <div className="text-center py-6">
-                <div className="w-10 h-10 bg-surface rounded-xl flex items-center justify-center mx-auto mb-2">
-                  <Clock size={18} className="text-text-muted" />
-                </div>
-                <p className="text-xs text-text-muted">No status updates yet</p>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Decision Notes */}
           {application.decision_notes && (
-            <div className="card border-l-[3px] border-l-accent">
-              <div className="flex items-center gap-2.5 mb-3">
-                <MessageSquare size={16} className="text-accent" />
-                <h3 className="text-sm font-bold text-text-primary">Decision Notes</h3>
+            <div className="card">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare size={18} className="text-text-muted" />
+                <h2 className="text-lg font-semibold text-text-primary">Decision Notes</h2>
               </div>
-              <p className="text-sm text-text-secondary leading-relaxed">{application.decision_notes}</p>
+              <div className="p-3 rounded-lg bg-surface">
+                <p className="text-sm text-text-secondary">{application.decision_notes}</p>
+              </div>
             </div>
           )}
         </div>

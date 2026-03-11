@@ -24,15 +24,14 @@ export default function LoginPage() {
     try {
       await login(email, password);
 
-      // Get user directly from localStorage after login completes
-      // The login function updates localStorage synchronously
-      const loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
+      // Get user directly from sessionStorage after login completes
+      // The login function updates sessionStorage synchronously
+      const loggedInUser = JSON.parse(sessionStorage.getItem("user") || "{}");
 
       // Check if user is applicant - redirect others to appropriate portals
       const applicantRoles = ["applicant", "APPLICANT"];
       if (!loggedInUser.role || !applicantRoles.includes(loggedInUser.role)) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
         const adminRoles = ["admin", "SYSTEM_ADMIN"];
         if (adminRoles.includes(loggedInUser.role)) {
           toast.error("Please use the Admin portal to sign in.");
@@ -163,12 +162,12 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-text-primary mb-1">
             Applicant Sign In
           </h1>
-          <p className="text-text-secondary mb-8">
+          <p className="text-text-secondary text-sm mb-6">
             Enter credentials to access your visa applications
           </p>
 
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {process.env.NODE_ENV !== "production" && (
               <div className="flex justify-end mb-2">
                 <Button
@@ -179,7 +178,7 @@ export default function LoginPage() {
                     setEmail("fatima@example.com");
                     setPassword("password");
                   }}
-                  className="text-xs"
+                  className="!text-xs !py-1.5 !px-3"
                 >
                   Demo: Applicant
                 </Button>
@@ -206,8 +205,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               loading={loading}
-              className="w-full"
-              size="lg"
+              className="w-full !py-2.5"
             >
               Sign In
             </Button>
@@ -216,35 +214,51 @@ export default function LoginPage() {
           <div className="flex items-center justify-between mt-4">
             <Link
               href="/forgot-password"
-              className="text-sm text-accent hover:underline"
+              className="text-xs text-accent hover:underline"
             >
               Forgot password?
             </Link>
-            <p className="text-sm text-text-secondary">
+            <p className="text-xs text-text-secondary">
               No account?{" "}
               <Link
                 href="/register"
-                className="text-accent font-medium hover:underline"
+                className="text-accent font-semibold hover:underline"
               >
                 Register
               </Link>
             </p>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-border">
-            <p className="text-xs text-text-muted text-center mb-3">Other portals</p>
-            <div className="flex gap-3">
+          <div className="mt-6 pt-5 border-t border-border">
+            <p className="text-[10px] text-text-muted text-center mb-3 uppercase tracking-wide">Other Portals</p>
+            <div className="grid grid-cols-2 gap-2">
               <Link
                 href="/login/staff"
-                className="flex-1 text-center py-2 px-3 rounded-lg bg-teal-50 text-teal-700 text-xs font-medium hover:bg-teal-100 transition-colors"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-teal-50 text-teal-700 text-xs font-semibold hover:bg-teal-100 transition-colors border border-teal-100"
               >
-                Staff Portal
+                <Briefcase size={14} />
+                Staff
               </Link>
               <Link
                 href="/login/admin"
-                className="flex-1 text-center py-2 px-3 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium hover:bg-purple-100 transition-colors"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-purple-50 text-purple-700 text-xs font-semibold hover:bg-purple-100 transition-colors border border-purple-100"
               >
-                Admin Portal
+                <Shield size={14} />
+                Admin
+              </Link>
+              <Link
+                href="/login/airline"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition-colors border border-blue-100"
+              >
+                <Briefcase size={14} />
+                Airline
+              </Link>
+              <Link
+                href="/login/border"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-violet-50 text-violet-700 text-xs font-semibold hover:bg-violet-100 transition-colors border border-violet-100"
+              >
+                <Shield size={14} />
+                Border
               </Link>
             </div>
           </div>

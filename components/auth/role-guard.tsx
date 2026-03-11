@@ -24,7 +24,17 @@ const loginRoutes: Record<UserRole, string> = {
   MFA_ADMIN: "/login/staff",
   // Admin
   SYSTEM_ADMIN: "/login/admin",
+  // Border roles
+  BORDER_OFFICER: "/login/border",
+  BORDER_SUPERVISOR: "/login/border",
+  // Airline roles
+  AIRLINE_STAFF: "/login/airline",
+  AIRLINE_ADMIN: "/login/airline",
   // Legacy role names for backward compatibility
+  border_officer: "/login/border",
+  border_supervisor: "/login/border",
+  airline_staff: "/login/airline",
+  airline_admin: "/login/airline",
   gis_officer: "/login/staff",
   mfa_reviewer: "/login/staff",
   admin: "/login/admin",

@@ -25,13 +25,6 @@ interface AssistantAnswers {
 const PURPOSE_OPTIONS = [
   { value: "tourism", label: "Tourism & Sightseeing", icon: <Globe size={18} />, desc: "Visiting for leisure, culture, or family" },
   { value: "business", label: "Business & Trade", icon: <Briefcase size={18} />, desc: "Meetings, negotiations, investment" },
-  { value: "study", label: "Education & Study", icon: <GraduationCap size={18} />, desc: "Enrolled in a Ghanaian institution" },
-  { value: "work", label: "Employment", icon: <Briefcase size={18} />, desc: "Taking up a job or contract in Ghana" },
-  { value: "medical", label: "Medical Treatment", icon: <Stethoscope size={18} />, desc: "Seeking healthcare in Ghana" },
-  { value: "conference", label: "Conference / Event", icon: <Users size={18} />, desc: "Attending a seminar, summit, or event" },
-  { value: "transit", label: "Transit / Stopover", icon: <Plane size={18} />, desc: "Passing through Ghana to another country" },
-  { value: "diplomatic", label: "Diplomatic / Official", icon: <Shield size={18} />, desc: "Government or diplomatic mission" },
-  { value: "emergency", label: "Emergency / Humanitarian", icon: <AlertTriangle size={18} />, desc: "Urgent family or humanitarian crisis" },
 ];
 
 const DURATION_OPTIONS = [
@@ -67,29 +60,20 @@ function getRecommendations(answers: AssistantAnswers, visaTypes: VisaType[]): {
     results.push({ slug: "caribbean-eta", reason: "Caribbean nationals qualify for a streamlined Electronic Travel Authorization.", confidence: 95 });
   }
 
-  // Purpose-based recommendations
+  // Purpose-based recommendations - only tourism and business
   const purposeMap: Record<string, { slug: string; reason: string; base: number }> = {
     tourism: { slug: "tourism", reason: "Tourism visa is ideal for sightseeing, family visits, and cultural exploration.", base: 90 },
     business: { slug: "business", reason: "Business visa covers meetings, trade, and investment activities with multiple-entry option.", base: 90 },
-    study: { slug: "student", reason: "Student visa is required for enrollment in Ghanaian educational institutions.", base: 92 },
-    work: { slug: "work", reason: "Work permit visa is required for employment in Ghana.", base: 92 },
-    medical: { slug: "medical", reason: "Medical visa is designed for those seeking healthcare treatment in Ghana.", base: 90 },
-    conference: { slug: "conference", reason: "Conference/Event visa covers attendance at seminars, summits, and exhibitions.", base: 88 },
-    transit: { slug: "transit", reason: "Transit visa allows passage through Ghana for up to 72 hours.", base: 90 },
-    diplomatic: { slug: "diplomatic", reason: "Diplomatic visa for official government representatives (fee-exempt).", base: 95 },
-    emergency: { slug: "emergency", reason: "Emergency visa for urgent humanitarian situations.", base: 93 },
   };
 
   if (answers.purpose && purposeMap[answers.purpose]) {
     const rec = purposeMap[answers.purpose];
     // Don't duplicate if already recommended via ETA and purpose is tourism
     if (!results.some(r => r.slug === rec.slug)) {
-      // Adjust confidence based on duration match
+      // Adjust confidence based on duration match (only for tourism and business)
       let conf = rec.base;
       const dur = answers.duration;
-      if (rec.slug === "transit" && dur !== "under_7") conf -= 20;
-      if (rec.slug === "student" && (dur === "under_7" || dur === "7_30")) conf -= 15;
-      if (rec.slug === "work" && (dur === "under_7" || dur === "7_30")) conf -= 15;
+      // No special duration adjustments needed for tourism and business
       results.push({ slug: rec.slug, reason: rec.reason, confidence: Math.max(conf, 50) });
     }
   }

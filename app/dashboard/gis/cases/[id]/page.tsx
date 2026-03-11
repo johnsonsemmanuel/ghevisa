@@ -14,7 +14,11 @@ import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/input";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ReasonCodeSelector } from "@/components/ui/reason-code-selector";
+import { MultiReasonSelector } from "@/components/ui/multi-reason-selector";
 import { RiskPanel } from "@/components/ui/risk-panel";
+import { RiskScoreCard } from "@/components/ui/risk-score-card";
+import { RiskGuidance } from "@/components/ui/risk-guidance";
+import { RiskOverridePanel } from "@/components/ui/risk-override-panel";
 import { TrustNetPanel } from "@/components/ui/trustnet-panel";
 import {
   ArrowLeft,
@@ -74,6 +78,7 @@ export default function GisCaseDetailPage() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedReasonCode, setSelectedReasonCode] = useState<string | null>(null);
+  const [selectedReasonCodes, setSelectedReasonCodes] = useState<string[]>([]);
   const [reasonCodes, setReasonCodes] = useState<ReasonCode[]>([]);
   const [previewDoc, setPreviewDoc] = useState<{
     id: number;
@@ -137,6 +142,7 @@ export default function GisCaseDetailPage() {
       setRequestInfoOpen(false);
       setApproveOpen(false);
       setDenyOpen(false);
+      setSelectedReasonCodes([]);
       refresh();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -425,6 +431,31 @@ export default function GisCaseDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Risk Score Card */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield size={18} className="text-text-muted" />
+              <h2 className="text-lg font-semibold text-text-primary">Risk Assessment</h2>
+            </div>
+            <RiskScoreCard
+              riskScore={application.riskAssessment?.risk_score ?? null}
+              riskLevel={application.riskAssessment?.risk_level ?? null}
+              riskReasons={application.riskAssessment?.risk_reasons ?? []}
+              overrideFlag={application.riskAssessment?.override_flag ?? false}
+              overrideBy={application.riskAssessment?.override_by}
+              overrideTimestamp={application.riskAssessment?.override_timestamp}
+            />
+          </div>
+
+          {/* Review Guidance */}
+          <RiskGuidance riskLevel={application.riskAssessment?.risk_level ?? null} />
+
+          {/* Risk Override Panel */}
+          <RiskOverridePanel 
+            applicationId={application.id.toString()}
+            riskAssessment={application.riskAssessment as any}
+          />
 
           {/* Risk Intelligence Panel */}
           <div className="card">
@@ -855,7 +886,7 @@ export default function GisCaseDetailPage() {
         </div>
       </Modal>
 
-      <Modal isOpen={denyOpen} onClose={() => { setDenyOpen(false); setSelectedReasonCode(null); }} title="Deny Application">
+      <Modal isOpen={denyOpen} onClose={() => { setDenyOpen(false); setSelectedReasonCode(null); setSelectedReasonCodes([]); }} title="Deny Application">
         <div className="space-y-4">
           <div className="p-4 rounded-xl bg-red-50 border border-red-200">
             <div className="flex items-center gap-3">
@@ -863,23 +894,28 @@ export default function GisCaseDetailPage() {
               <p className="text-sm text-red-700">This will deny the application. The applicant will be notified with the reason provided.</p>
             </div>
           </div>
-          <ReasonCodeSelector
+          <MultiReasonSelector
             codes={reasonCodes}
-            selectedCode={selectedReasonCode}
-            onSelect={(code) => setSelectedReasonCode(code.code)}
+            selectedCodes={selectedReasonCodes}
+            onSelect={(codes) => {
+              setSelectedReasonCodes(codes.map(c => c.code));
+              setSelectedReasonCode(codes.length > 0 ? codes[0].code : null);
+            }}
             actionType="reject"
+            maxSelections={5}
+            label="Rejection Reasons"
           />
           <Textarea label="Additional Notes (required)" placeholder="Explain the reason for denial..." value={text} onChange={(e) => setText(e.target.value)} rows={3} />
         </div>
         <div className="flex gap-3 justify-end mt-6">
-          <Button variant="secondary" onClick={() => { setDenyOpen(false); setSelectedReasonCode(null); }}>Cancel</Button>
+          <Button variant="secondary" onClick={() => { setDenyOpen(false); setSelectedReasonCode(null); setSelectedReasonCodes([]); }}>Cancel</Button>
           <Button
             variant="danger"
             loading={loading}
-            disabled={!selectedReasonCode || !text.trim()}
+            disabled={selectedReasonCodes.length === 0 || !text.trim()}
             onClick={async () => {
-              if (!selectedReasonCode) {
-                toast.error("Please select a reason code");
+              if (selectedReasonCodes.length === 0) {
+                toast.error("Please select at least one reason code");
                 return;
               }
               if (!text.trim()) {
@@ -890,17 +926,16 @@ export default function GisCaseDetailPage() {
               try {
                 await api.post(`/gis/cases/${id}/deny`, {
                   notes: text,
-                  reason_code: selectedReasonCode
+                  reason_codes: selectedReasonCodes
                 });
                 toast.success("Application denied successfully");
                 setDenyOpen(false);
                 setSelectedReasonCode(null);
+                setSelectedReasonCodes([]);
                 setText("");
-                refresh();
               } catch (err: unknown) {
                 const error = err as { response?: { data?: { message?: string } } };
-                console.error('Denial error:', error);
-                toast.error(error.response?.data?.message || "Denial failed");
+                toast.error(error.response?.data?.message || "Failed to deny application");
               } finally {
                 setLoading(false);
               }

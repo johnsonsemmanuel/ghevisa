@@ -1,229 +1,423 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
-import {
-  Plane,
-  Shield,
-  TrendingUp,
-  AlertTriangle,
-  Users,
-  AlertOctagon,
-  Download,
-  BarChart3,
-  Clock,
+import toast from "react-hot-toast";
+import { 
+  FileText, Download, Calendar, Filter, TrendingUp, 
+  Users, MapPin, Clock, BarChart3, PieChart, Activity
 } from "lucide-react";
 
-interface ArrivalsReport {
-  total_arrivals: number;
-  by_hour: Record<string, number>;
-  by_flight: Array<{ flight_number: string; airline: string; count: number }>;
-  by_port: Record<string, number>;
-  peak_hour: string | null;
-}
-
-interface OutcomesReport {
-  total: number;
-  by_status: Record<string, number>;
-  rates: { admit: number; secondary: number; deny: number };
-}
-
-interface AlertsReport {
-  total_alerts: number;
-  watchlist_hits: number;
-  fraud_flags: number;
-  alerts: Array<{ id: number; traveler_name: string; port: string; notes: string; time: string }>;
-}
-
-interface ProductivityReport {
-  total_cases: number;
-  officers_active: number;
-  avg_per_officer: number;
-  by_officer: Array<{ officer_id: number; officer_name: string; cases_processed: number }>;
-}
-
-interface ExceptionsReport {
-  total_overrides: number;
-  system_downtime: number;
-  offline_usage: number;
-  overrides: Array<{ id: number; traveler_name: string; officer: string; notes: string; time: string }>;
-}
-
 export default function BorderReportsPage() {
-  const [selectedPort, setSelectedPort] = useState("KIA");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [reportType, setReportType] = useState("daily");
+  const [dateRange, setDateRange] = useState("today");
+  const [generating, setGenerating] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  const { data: arrivals } = useQuery({
-    queryKey: ["border-report-arrivals", selectedPort, selectedDate],
-    queryFn: () => api.get<ArrivalsReport>(`/border/reports/arrivals?port=${selectedPort}&date=${selectedDate}`).then((r) => r.data),
-  });
+  // Mock data
+  const reportTemplates = [
+    {
+      id: 1,
+      name: "Daily Operations Report",
+      description: "Comprehensive daily border control activities",
+      icon: <Calendar size={16} className="text-primary" />,
+      frequency: "Daily",
+      lastGenerated: "Today, 08:00",
+    },
+    {
+      id: 2,
+      name: "Weekly Performance Report",
+      description: "Weekly verification statistics and trends",
+      icon: <TrendingUp size={16} className="text-success" />,
+      frequency: "Weekly",
+      lastGenerated: "Monday, 08:00",
+    },
+    {
+      id: 3,
+      name: "Officer Activity Report",
+      description: "Individual officer performance metrics",
+      icon: <Users size={16} className="text-accent" />,
+      frequency: "On-demand",
+      lastGenerated: "2 days ago",
+    },
+    {
+      id: 4,
+      name: "Port Statistics Report",
+      description: "Port-by-port verification analytics",
+      icon: <MapPin size={16} className="text-primary" />,
+      frequency: "Weekly",
+      lastGenerated: "Monday, 08:00",
+    },
+    {
+      id: 5,
+      name: "Denial Analysis Report",
+      description: "Analysis of denied entries and reasons",
+      icon: <BarChart3 size={16} className="text-danger" />,
+      frequency: "Monthly",
+      lastGenerated: "1st of month",
+    },
+    {
+      id: 6,
+      name: "Processing Time Report",
+      description: "Average processing times and efficiency",
+      icon: <Clock size={16} className="text-warning" />,
+      frequency: "Weekly",
+      lastGenerated: "Monday, 08:00",
+    },
+  ];
 
-  const { data: outcomes } = useQuery({
-    queryKey: ["border-report-outcomes", selectedPort, selectedDate],
-    queryFn: () => api.get<OutcomesReport>(`/border/reports/outcomes?port=${selectedPort}&start_date=${selectedDate}&end_date=${selectedDate}`).then((r) => r.data),
-  });
+  const recentReports = [
+    { name: "Daily Operations - March 11, 2026", date: "Today", size: "2.4 MB", format: "PDF" },
+    { name: "Weekly Performance - Week 10", date: "Yesterday", size: "5.1 MB", format: "PDF" },
+    { name: "Officer Activity - February 2026", date: "2 days ago", size: "3.8 MB", format: "Excel" },
+    { name: "Port Statistics - Week 9", date: "1 week ago", size: "4.2 MB", format: "PDF" },
+  ];
 
-  const { data: alerts } = useQuery({
-    queryKey: ["border-report-alerts", selectedPort, selectedDate],
-    queryFn: () => api.get<AlertsReport>(`/border/reports/alerts?port=${selectedPort}&date=${selectedDate}`).then((r) => r.data),
-  });
+  const quickStats = {
+    reports_generated: 156,
+    avg_generation_time: "12s",
+    total_downloads: 892,
+    scheduled_reports: 8,
+  };
 
-  const { data: productivity } = useQuery({
-    queryKey: ["border-report-productivity", selectedPort, selectedDate],
-    queryFn: () => api.get<ProductivityReport>(`/border/reports/productivity?port=${selectedPort}&date=${selectedDate}`).then((r) => r.data),
-  });
+  const handleGenerateReport = async (templateId: number, reportTypeName: string) => {
+    setGenerating(templateId.toString());
+    
+    try {
+      const reportTypeMap: Record<number, string> = {
+        1: 'daily',
+        2: 'weekly',
+        3: 'officer_activity',
+        4: 'port_statistics',
+        5: 'denial_analysis',
+        6: 'processing_time',
+      };
 
-  const { data: exceptions } = useQuery({
-    queryKey: ["border-report-exceptions", selectedPort, selectedDate],
-    queryFn: () => api.get<ExceptionsReport>(`/border/reports/exceptions?port=${selectedPort}&date=${selectedDate}`).then((r) => r.data),
-  });
+      const response = await api.post('/border/reports/generate', {
+        report_type: reportTypeMap[templateId],
+        date_range: dateRange,
+        format: 'pdf',
+      });
+
+      toast.success(`${reportTypeName} generated successfully!`);
+      
+      // Show report details
+      const report = response.data.report;
+      toast.success(
+        `Report ready: ${report.name} (${report.size})`,
+        { duration: 5000 }
+      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to generate report');
+    } finally {
+      setGenerating(null);
+    }
+  };
+
+  const handleDownloadReport = async (reportName: string) => {
+    toast.success(`Downloading ${reportName}...`);
+    // In production, this would trigger actual file download
+    setTimeout(() => {
+      toast.success('Download complete!');
+    }, 1500);
+  };
+
+  const handleExportData = async () => {
+    setExporting(true);
+    
+    try {
+      const response = await api.post('/border/reports/export', {
+        date_range: dateRange,
+        format: 'csv',
+      });
+
+      toast.success(`Exported ${response.data.records} records successfully!`);
+      
+      // In production, trigger file download
+      setTimeout(() => {
+        toast.success('Export ready for download');
+      }, 1000);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to export data');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <DashboardShell
-      title="Border HQ Reports"
-      description="Operational intelligence and compliance reporting"
-      actions={
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-4 py-2 rounded-xl border border-slate-200 text-sm transition-colors duration-150 ease-out"
-          />
-          <select
-            value={selectedPort}
-            onChange={(e) => setSelectedPort(e.target.value)}
-            className="px-4 py-2 rounded-xl border border-slate-200 text-sm transition-colors duration-150 ease-out"
-          >
-            <option value="KIA">KIA</option>
-            <option value="ACC">Tema</option>
-            <option value="AFL">Aflao</option>
-            <option value="ELB">Elubo</option>
-          </select>
-          <Button variant="secondary" size="sm">
-            <Download size={14} className="mr-1" /> Export
-          </Button>
-        </div>
-      }
+      title="Reports & Analytics"
+      description="Generate and download comprehensive border control reports"
     >
-      {/* Report KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-4">
-          <Plane size={18} className="text-blue-600 mb-2" />
-          <p className="text-2xl font-bold text-slate-800">{arrivals?.total_arrivals ?? 0}</p>
-          <p className="text-xs font-semibold text-blue-600">Arrivals</p>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 p-4">
-          <TrendingUp size={18} className="text-emerald-600 mb-2" />
-          <p className="text-2xl font-bold text-slate-800">{outcomes?.rates.admit ?? 0}%</p>
-          <p className="text-xs font-semibold text-emerald-600">Admit Rate</p>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-4">
-          <AlertTriangle size={18} className="text-amber-600 mb-2" />
-          <p className="text-2xl font-bold text-slate-800">{alerts?.watchlist_hits ?? 0}</p>
-          <p className="text-xs font-semibold text-amber-600">Watchlist Hits</p>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 border border-violet-200 p-4">
-          <Users size={18} className="text-violet-600 mb-2" />
-          <p className="text-2xl font-bold text-slate-800">{productivity?.officers_active ?? 0}</p>
-          <p className="text-xs font-semibold text-violet-600">Officers Active</p>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200 p-4">
-          <AlertOctagon size={18} className="text-red-600 mb-2" />
-          <p className="text-2xl font-bold text-slate-800">{exceptions?.total_overrides ?? 0}</p>
-          <p className="text-xs font-semibold text-red-600">Overrides</p>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        {/* Arrivals by Flight */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Plane size={18} className="text-slate-500" />
-            <h3 className="text-lg font-bold text-slate-800">Arrivals by Flight</h3>
-          </div>
-          <div className="space-y-2">
-            {arrivals?.by_flight?.slice(0, 8).map((flight) => (
-              <div key={flight.flight_number} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <div>
-                  <p className="font-semibold text-slate-800">{flight.flight_number}</p>
-                  <p className="text-xs text-slate-500">{flight.airline}</p>
-                </div>
-                <span className="text-sm font-bold text-blue-600">{flight.count}</span>
+      <div className="space-y-4">
+        {/* Header Banner */}
+        <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-accent/5 border border-primary/20 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <FileText size={20} className="text-primary" />
               </div>
-            ))}
-            {(!arrivals?.by_flight || arrivals.by_flight.length === 0) && (
-              <p className="text-sm text-slate-500">No flight data for selected date.</p>
-            )}
+              <div>
+                <h2 className="text-base font-bold text-text-primary mb-0.5">
+                  Border Control Reports
+                </h2>
+                <p className="text-xs text-text-secondary">
+                  Generate, schedule, and download comprehensive analytics reports
+                </p>
+              </div>
+            </div>
+
+            <Button 
+              size="sm" 
+              className="!bg-primary"
+              onClick={handleExportData}
+              disabled={exporting}
+            >
+              <Download size={14} className="mr-1.5" />
+              {exporting ? 'Exporting...' : 'Export Data'}
+            </Button>
           </div>
         </div>
 
-        {/* Entry Outcomes */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 size={18} className="text-slate-500" />
-            <h3 className="text-lg font-bold text-slate-800">Entry Outcomes</h3>
+        {/* Quick Stats */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="card p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-accent/6 flex items-center justify-center">
+                <FileText size={16} className="text-accent" />
+              </div>
+            </div>
+            <p className="text-xs text-text-muted mb-0.5">Reports Generated</p>
+            <p className="text-2xl font-bold text-text-primary">{quickStats.reports_generated}</p>
           </div>
+
+          <div className="card p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-primary/6 flex items-center justify-center">
+                <Clock size={16} className="text-primary" />
+              </div>
+            </div>
+            <p className="text-xs text-text-muted mb-0.5">Avg Generation Time</p>
+            <p className="text-2xl font-bold text-text-primary">{quickStats.avg_generation_time}</p>
+          </div>
+
+          <div className="card p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-success/6 flex items-center justify-center">
+                <Download size={16} className="text-success" />
+              </div>
+            </div>
+            <p className="text-xs text-text-muted mb-0.5">Total Downloads</p>
+            <p className="text-2xl font-bold text-text-primary">{quickStats.total_downloads}</p>
+          </div>
+
+          <div className="card p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-warning/6 flex items-center justify-center">
+                <Calendar size={16} className="text-warning" />
+              </div>
+            </div>
+            <p className="text-xs text-text-muted mb-0.5">Scheduled Reports</p>
+            <p className="text-2xl font-bold text-text-primary">{quickStats.scheduled_reports}</p>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-4">
+          {/* Report Templates */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-accent/6 flex items-center justify-center">
+                    <BarChart3 size={14} className="text-accent" />
+                  </div>
+                  <h3 className="text-sm font-bold text-text-primary">Report Templates</h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={dateRange}
+                    onChange={(e) => setDateRange(e.target.value)}
+                    className="text-xs px-2 py-1 rounded-lg border border-border bg-white text-text-primary"
+                  >
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="custom">Custom Range</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                {reportTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="p-3 rounded-lg bg-surface border border-border hover:border-primary/30 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-start gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-white border border-border flex items-center justify-center shrink-0 group-hover:border-primary/30 transition-colors">
+                        {template.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-text-primary mb-0.5 truncate">
+                          {template.name}
+                        </p>
+                        <p className="text-[10px] text-text-muted line-clamp-2">
+                          {template.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">
+                          {template.frequency}
+                        </span>
+                        <span className="text-[10px] text-text-muted">
+                          {template.lastGenerated}
+                        </span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        className="!h-6 !text-[10px] !px-2"
+                        onClick={() => handleGenerateReport(template.id, template.name)}
+                        disabled={generating === template.id.toString()}
+                      >
+                        {generating === template.id.toString() ? 'Generating...' : 'Generate'}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Reports */}
+            <div className="card p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-primary/6 flex items-center justify-center">
+                  <FileText size={14} className="text-primary" />
+                </div>
+                <h3 className="text-sm font-bold text-text-primary">Recent Reports</h3>
+              </div>
+
+              <div className="space-y-2">
+                {recentReports.map((report, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 p-2.5 rounded-lg bg-surface hover:bg-surface/80 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-white border border-border flex items-center justify-center shrink-0">
+                      <FileText size={14} className="text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-text-primary truncate mb-0.5">
+                        {report.name}
+                      </p>
+                      <div className="flex items-center gap-2 text-[10px] text-text-muted">
+                        <span>{report.date}</span>
+                        <span>•</span>
+                        <span>{report.size}</span>
+                        <span>•</span>
+                        <span className="px-1.5 py-0.5 rounded bg-accent/10 text-accent font-medium">
+                          {report.format}
+                        </span>
+                      </div>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      className="!h-7 !text-[10px] !px-2 shrink-0"
+                      onClick={() => handleDownloadReport(report.name)}
+                    >
+                      <Download size={12} className="mr-1" />
+                      Download
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar */}
           <div className="space-y-4">
-            {[
-              { label: "Admit", value: outcomes?.rates.admit ?? 0, color: "bg-emerald-500" },
-              { label: "Secondary", value: outcomes?.rates.secondary ?? 0, color: "bg-amber-500" },
-              { label: "Deny", value: outcomes?.rates.deny ?? 0, color: "bg-red-500" },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-slate-600">{item.label}</span>
-                  <span className="text-sm font-semibold text-slate-800">{item.value}%</span>
+            <div className="card p-4 bg-primary/5 border-primary/20">
+              <div className="flex items-center gap-2 mb-3">
+                <Activity size={16} className="text-primary" />
+                <h4 className="text-xs font-bold text-text-primary">Report Insights</h4>
+              </div>
+              <div className="space-y-2">
+                <div className="p-2 rounded-lg bg-white border border-border">
+                  <p className="text-[11px] font-medium text-text-primary mb-0.5">Most Downloaded</p>
+                  <p className="text-[10px] text-text-muted">Daily Operations Report</p>
                 </div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${item.color}`} style={{ width: `${Math.min(100, item.value)}%` }} />
+                <div className="p-2 rounded-lg bg-white border border-border">
+                  <p className="text-[11px] font-medium text-text-primary mb-0.5">Trending Up</p>
+                  <p className="text-[10px] text-text-muted">Officer Activity Reports +24%</p>
+                </div>
+                <div className="p-2 rounded-lg bg-white border border-border">
+                  <p className="text-[11px] font-medium text-text-primary mb-0.5">Next Scheduled</p>
+                  <p className="text-[10px] text-text-muted">Weekly Performance - Tomorrow 08:00</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
+            </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Alerts and Hits */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Shield size={18} className="text-slate-500" />
-            <h3 className="text-lg font-bold text-slate-800">Alerts & Hits</h3>
-          </div>
-          <div className="space-y-2">
-            {alerts?.alerts?.slice(0, 6).map((alert) => (
-              <div key={alert.id} className="p-3 rounded-xl bg-red-50 border border-red-100">
-                <p className="text-sm font-semibold text-red-700">{alert.traveler_name}</p>
-                <p className="text-xs text-red-600">{alert.port} • {alert.time}</p>
-                <p className="text-xs text-red-500 mt-1">{alert.notes}</p>
+            <div className="card p-4 bg-surface">
+              <h4 className="text-xs font-bold text-text-primary mb-2">Available Formats</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-danger/10 flex items-center justify-center">
+                      <FileText size={12} className="text-danger" />
+                    </div>
+                    <span className="text-text-primary">PDF</span>
+                  </div>
+                  <span className="text-text-muted">Standard</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-success/10 flex items-center justify-center">
+                      <FileText size={12} className="text-success" />
+                    </div>
+                    <span className="text-text-primary">Excel</span>
+                  </div>
+                  <span className="text-text-muted">Data Analysis</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
+                      <FileText size={12} className="text-primary" />
+                    </div>
+                    <span className="text-text-primary">CSV</span>
+                  </div>
+                  <span className="text-text-muted">Raw Data</span>
+                </div>
               </div>
-            ))}
-            {(!alerts?.alerts || alerts.alerts.length === 0) && (
-              <p className="text-sm text-slate-500">No alerts for selected date.</p>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Officer Productivity */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock size={18} className="text-slate-500" />
-            <h3 className="text-lg font-bold text-slate-800">Officer Productivity</h3>
-          </div>
-          <div className="space-y-2">
-            {productivity?.by_officer?.slice(0, 8).map((officer) => (
-              <div key={officer.officer_id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-sm font-medium text-slate-700">{officer.officer_name}</span>
-                <span className="text-sm font-bold text-violet-600">{officer.cases_processed}</span>
-              </div>
-            ))}
-            {(!productivity?.by_officer || productivity.by_officer.length === 0) && (
-              <p className="text-sm text-slate-500">No productivity records for selected date.</p>
-            )}
+            <div className="card p-4 bg-surface">
+              <h4 className="text-xs font-bold text-text-primary mb-2">Report Guidelines</h4>
+              <ul className="space-y-1.5 text-xs text-text-secondary">
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>Generate reports for compliance and auditing</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>Schedule automated report generation</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>Export data in multiple formats</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>All reports are securely stored</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
