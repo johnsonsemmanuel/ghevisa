@@ -7,6 +7,7 @@ export default function BorderLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Border officer and supervisor access only
   return (
     <RoleGuard allowedRoles={["border_officer", "border_supervisor"]} redirectTo="/login/border">
       {children}
