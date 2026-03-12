@@ -31,7 +31,7 @@ export const roleConfigs: Record<string, RoleConfig> = {
     title: "Border Verification Portal",
     subtitle: "Border Control",
     icon: "scan",
-    allowedRoles: ["BORDER_OFFICER", "BORDER_SUPERVISOR", "border_officer", "border_supervisor"],
+    allowedRoles: ["border_officer", "border_supervisor"],
     redirectPath: "/dashboard/border",
     description: "Immigration entry point verification system for border officers. Verify traveler authorization and manage border crossings.",
     features: [
@@ -56,7 +56,7 @@ export const roleConfigs: Record<string, RoleConfig> = {
     title: "Airline Verification Portal",
     subtitle: "Airline Portal",
     icon: "plane",
-    allowedRoles: ["AIRLINE_STAFF", "AIRLINE_ADMIN", "airline_staff", "airline_admin"],
+    allowedRoles: ["airline_staff", "airline_admin"],
     redirectPath: "/dashboard/airline",
     description: "Ghana Travel Authorization Verification System (GTAVS). Verify passenger boarding eligibility for flights to Ghana.",
     features: [
@@ -84,7 +84,7 @@ export const roleConfigs: Record<string, RoleConfig> = {
     allowedRoles: [
       "GIS_REVIEWING_OFFICER", "GIS_APPROVAL_OFFICER", "GIS_ADMIN",
       "MFA_REVIEWING_OFFICER", "MFA_APPROVAL_OFFICER", "MFA_ADMIN",
-      "SYSTEM_ADMIN", "BORDER_OFFICER", "BORDER_SUPERVISOR",
+      "SYSTEM_ADMIN",
       "gis_officer", "gis_approver", "gis_admin",
       "mfa_reviewer", "mfa_approver", "mfa_admin",
       "admin", "border_officer", "border_supervisor"

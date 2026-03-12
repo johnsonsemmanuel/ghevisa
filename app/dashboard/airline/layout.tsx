@@ -8,7 +8,7 @@ export default function AirlineLayout({
   children: React.ReactNode;
 }) {
   return (
-    <RoleGuard allowedRoles={["AIRLINE_STAFF", "AIRLINE_ADMIN"]} redirectTo="/login/airline">
+    <RoleGuard allowedRoles={["airline_staff", "airline_admin"]} redirectTo="/login/airline">
       {children}
     </RoleGuard>
   );
