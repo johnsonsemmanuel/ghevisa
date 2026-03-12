@@ -100,6 +100,19 @@ export function CardBody({ children, className = '' }: CardBodyProps) {
   );
 }
 
+interface CardContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function CardContent({ children, className = '' }: CardContentProps) {
+  return (
+    <div className={`p-4 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
 interface CardFooterProps {
   children: React.ReactNode;
   className?: string;
