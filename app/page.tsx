@@ -150,7 +150,7 @@ export default function Home() {
               ))}
               <div className="w-px h-6 bg-gray-200/30 mx-2" />
               <Link
-                href="https://evisa-app.bluespacefinancial.cloud/login"
+                href="/login"
                 className="inline-flex items-center gap-2 bg-[#006B3F] hover:bg-[#005A34] text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all shadow-lg shadow-[#006B3F]/20 ml-1"
               >
                 Apply Now <ArrowRight size={14} />
@@ -176,7 +176,7 @@ export default function Home() {
                   </Link>
                 );
               })}
-              <Link href="https://evisa-app.bluespacefinancial.cloud/login" onClick={() => setMobileMenuOpen(false)} className="block text-center bg-[#006B3F] text-white text-sm font-semibold px-4 py-3 rounded-lg mt-3">
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block text-center bg-[#006B3F] text-white text-sm font-semibold px-4 py-3 rounded-lg mt-3">
                 Apply Now
               </Link>
             </div>
@@ -232,7 +232,7 @@ export default function Home() {
 
             <div className="animate-fade-in-up delay-300 flex flex-wrap gap-4">
               <Link
-                href="https://evisa-app.bluespacefinancial.cloud/login"
+                href="/login"
                 className="group inline-flex items-center gap-2.5 bg-[#006B3F] hover:bg-[#005A34] text-white font-bold px-8 py-4 rounded-xl transition-all shadow-xl shadow-[#006B3F]/30 text-sm sm:text-base"
               >
                 Apply Now
@@ -310,7 +310,7 @@ export default function Home() {
                 </div>
                 <p className="text-sm text-gray-500 leading-relaxed mb-5">{visa.desc}</p>
                 <Link
-                  href="https://evisa-app.bluespacefinancial.cloud/login"
+                  href="/login"
                   className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors group-hover:gap-2.5"
                   style={{ color: visa.color }}
                 >
@@ -429,7 +429,7 @@ export default function Home() {
                     </button>
                     {(eligibilityResult === "visa_required" || eligibilityResult === "visa_on_arrival") && (
                       <Link
-                        href="https://evisa-app.bluespacefinancial.cloud/login"
+                        href="/login"
                         className="flex-1 inline-flex items-center justify-center gap-2 bg-[#006B3F] hover:bg-[#005A34] text-white font-bold px-5 py-3 rounded-xl transition-colors shadow-lg shadow-[#006B3F]/20 text-sm"
                       >
                         Apply Now <ArrowRight size={14} />
