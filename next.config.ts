@@ -1,16 +1,19 @@
 import type { NextConfig } from "next";
 
 function getApiOrigins(): string[] {
-  const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  const raw = process.env.NEXT_PUBLIC_API_URL || "https://evisa-bk.bluespacefinancial.cloud/api";
   const origins = new Set<string>();
 
   try {
     const u = new URL(raw);
     origins.add(`${u.protocol}//${u.host}`);
   } catch {
-    // ignore invalid env var; fall back to localhost
+    // ignore invalid env var; fall back to production
   }
 
+  // Production API
+  origins.add("https://evisa-bk.bluespacefinancial.cloud");
+  
   // Useful local fallbacks (avoid CSP issues when switching hosts/ports)
   origins.add("http://localhost:8000");
   origins.add("http://127.0.0.1:8000");
