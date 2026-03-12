@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast";
 import type { Application } from "@/lib/types";
 import { useState, useMemo } from "react";
+import { usePaystack } from "@/lib/paystack";
 
 const PAYMENT_METHODS = [
   {
@@ -39,6 +40,7 @@ export default function ApplicationPaymentPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { initializePayment } = usePaystack();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<"USD" | "GHS">("USD");

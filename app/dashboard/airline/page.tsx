@@ -374,7 +374,7 @@ export default function AirlinePortalPage() {
                 <div className="flex gap-2 pt-1">
                   <Button
                     onClick={handleVerify}
-                    disabled={loading || !passportNumber || !nationality || (passportValidation && !passportValidation.valid)}
+                    disabled={loading || !passportNumber || !nationality || (passportValidation ? !passportValidation.valid : false)}
                     size="sm"
                     className="flex-1"
                   >

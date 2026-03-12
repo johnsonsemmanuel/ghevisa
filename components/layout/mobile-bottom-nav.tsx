@@ -35,39 +35,6 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
       { label: "Profile", href: "/dashboard/applicant/profile", icon: <User size={20} /> },
     ],
   },
-  APPLICANT: {
-    left: [
-      { label: "Home", href: "/dashboard/applicant", icon: <LayoutDashboard size={20} /> },
-      { label: "Applications", href: "/dashboard/applicant/applications", icon: <FileText size={20} /> },
-    ],
-    center: { label: "Apply", href: "/dashboard/applicant/applications/new" },
-    right: [
-      { label: "Alerts", href: "/dashboard/applicant/notifications", icon: <Bell size={20} /> },
-      { label: "More", href: "#", icon: <Menu size={20} /> },
-    ],
-  },
-  gis_officer: {
-    left: [
-      { label: "Home", href: "/dashboard/gis", icon: <LayoutDashboard size={20} /> },
-      { label: "Cases", href: "/dashboard/gis/cases", icon: <FolderOpen size={20} /> },
-    ],
-    center: { label: "Cases", href: "/dashboard/gis/cases" },
-    right: [
-      { label: "SLA", href: "/dashboard/gis/sla-alerts", icon: <AlertTriangle size={20} /> },
-      { label: "Payments", href: "/dashboard/gis/payments", icon: <BarChart3 size={20} /> },
-    ],
-  },
-  mfa_reviewer: {
-    left: [
-      { label: "Home", href: "/dashboard/mfa", icon: <LayoutDashboard size={20} /> },
-      { label: "Cases", href: "/dashboard/mfa/escalations", icon: <AlertTriangle size={20} /> },
-    ],
-    center: { label: "Cases", href: "/dashboard/mfa/escalations" },
-    right: [
-      { label: "Payments", href: "/dashboard/mfa/payments", icon: <BarChart3 size={20} /> },
-      { label: "Profile", href: "/dashboard/mfa", icon: <User size={20} /> },
-    ],
-  },
   // GIS roles - all use same navigation
   gis_reviewer: {
     left: [
@@ -148,15 +115,48 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
       { label: "Settings", href: "/dashboard/admin/tier-rules", icon: <Settings size={20} /> },
     ],
   },
-  admin: {
+  border_officer: {
     left: [
-      { label: "Home", href: "/dashboard/admin", icon: <LayoutDashboard size={20} /> },
-      { label: "Users", href: "/dashboard/admin/users", icon: <Users size={20} /> },
+      { label: "Home", href: "/dashboard/border", icon: <LayoutDashboard size={20} /> },
+      { label: "Operations", href: "/dashboard/border/operations", icon: <FolderOpen size={20} /> },
     ],
-    center: { label: "Apps", href: "/dashboard/admin/applications" },
+    center: { label: "Verify", href: "/dashboard/border/operations" },
     right: [
-      { label: "Reports", href: "/dashboard/admin/reports", icon: <BarChart3 size={20} /> },
-      { label: "Settings", href: "/dashboard/admin/tier-rules", icon: <Settings size={20} /> },
+      { label: "Reports", href: "/dashboard/border/reports", icon: <BarChart3 size={20} /> },
+      { label: "Profile", href: "/dashboard/border", icon: <User size={20} /> },
+    ],
+  },
+  border_supervisor: {
+    left: [
+      { label: "Home", href: "/dashboard/border", icon: <LayoutDashboard size={20} /> },
+      { label: "Operations", href: "/dashboard/border/operations", icon: <FolderOpen size={20} /> },
+    ],
+    center: { label: "Verify", href: "/dashboard/border/operations" },
+    right: [
+      { label: "Reports", href: "/dashboard/border/reports", icon: <BarChart3 size={20} /> },
+      { label: "Profile", href: "/dashboard/border", icon: <User size={20} /> },
+    ],
+  },
+  airline_staff: {
+    left: [
+      { label: "Home", href: "/dashboard/airline", icon: <LayoutDashboard size={20} /> },
+      { label: "Operations", href: "/dashboard/airline/operations", icon: <FolderOpen size={20} /> },
+    ],
+    center: { label: "Verify", href: "/dashboard/airline/operations" },
+    right: [
+      { label: "Reports", href: "/dashboard/airline/reports", icon: <BarChart3 size={20} /> },
+      { label: "Profile", href: "/dashboard/airline", icon: <User size={20} /> },
+    ],
+  },
+  airline_admin: {
+    left: [
+      { label: "Home", href: "/dashboard/airline", icon: <LayoutDashboard size={20} /> },
+      { label: "Operations", href: "/dashboard/airline/operations", icon: <FolderOpen size={20} /> },
+    ],
+    center: { label: "Verify", href: "/dashboard/airline/operations" },
+    right: [
+      { label: "Reports", href: "/dashboard/airline/reports", icon: <BarChart3 size={20} /> },
+      { label: "Profile", href: "/dashboard/airline", icon: <User size={20} /> },
     ],
   },
 };
