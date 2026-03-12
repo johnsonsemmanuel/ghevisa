@@ -86,6 +86,75 @@ export default function ApplicationPaymentPage() {
     };
   }, [application]);
 
+  const handlePaystackPayment = async (paymentData: any, method: string, currency: string) => {
+    if (!application) return;
+
+    try {
+      // Get Paystack public key from environment
+      const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+      
+      if (!publicKey) {
+        throw new Error('Paystack public key not configured');
+      }
+      
+      // Calculate amount in kobo/pesewas (Paystack expects amount * 100)
+      const amount = currency === 'GHS' 
+        ? Math.round(fees.total * exchangeRate * 100)
+        : Math.round(fees.total * 100);
+
+      const channels = method === 'paystack_mobile_money' ? ['mobile_money'] : ['card', 'bank'];
+
+      initializePayment({
+        key: publicKey,
+        email: application.email || 'applicant@example.com',
+        amount: amount,
+        currency: currency === 'GHS' ? 'GHS' : 'USD',
+        ref: paymentData.reference,
+        channels: channels,
+        metadata: {
+          application_id: application.id.toString(),
+          reference_number: application.reference_number,
+          payment_method: method,
+          custom_fields: [
+            {
+              display_name: 'Application Reference',
+              variable_name: 'application_ref',
+              value: application.reference_number
+            },
+            {
+              display_name: 'Applicant Name',
+              variable_name: 'applicant_name',
+              value: `${application.first_name} ${application.last_name}`
+            }
+          ]
+        },
+        callback: (response) => {
+          // Payment successful
+          toast.success("Payment successful! Verifying...", { duration: 3000 });
+          
+          // Verify payment on backend
+          api.post(`/payment/verify`, {
+            reference: response.reference
+          }).then(() => {
+            toast.success("Payment verified successfully!");
+            router.push(`/dashboard/applicant/applications/${id}`);
+          }).catch((error) => {
+            toast.error("Payment verification failed. Please contact support.");
+            console.error('Payment verification error:', error);
+          });
+        },
+        onClose: () => {
+          toast.error("Payment cancelled");
+          setProcessing(false);
+        }
+      });
+    } catch (error) {
+      console.error('Paystack initialization error:', error);
+      toast.error("Failed to initialize Paystack. Please try again.");
+      setProcessing(false);
+    }
+  };
+
   const handlePay = async (methodWithCurrency: string) => {
     if (!application) return;
     setProcessing(true);
@@ -103,8 +172,8 @@ export default function ApplicationPaymentPage() {
       if (res.data.success) {
         setShowPaymentModal(false);
 
+        // Always redirect to authorization URL (no popup)
         if (res.data.authorization_url) {
-          // Redirect to payment gateway (Paystack, GCB, etc.)
           toast.success("Redirecting to payment gateway...", { duration: 2000 });
           window.location.href = res.data.authorization_url;
         } else if (res.data.provider === 'bank_transfer') {
@@ -154,7 +223,7 @@ export default function ApplicationPaymentPage() {
   }
 
   // Check if application is eligible for payment
-  if (!["pending_payment", "submitted_awaiting_payment", "draft"].includes(application.status)) {
+  if (!["pending_payment", "submitted_awaiting_payment"].includes(application.status)) {
     return (
       <DashboardShell title="Payment Not Required">
         <div className="text-center py-16">

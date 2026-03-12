@@ -624,7 +624,7 @@ export default function MfaEscalationDetailPage() {
           </div>
 
           {/* Payment */}
-          {application.payment && (
+          {application.payments && application.payments.length > 0 && (
             <div className="card">
               <div className="flex items-center gap-2 mb-4">
                 <CreditCard size={18} className="text-text-muted" />
@@ -632,35 +632,38 @@ export default function MfaEscalationDetailPage() {
                   Payment
                 </h2>
               </div>
-              <div className="grid sm:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-text-muted mb-0.5">Amount</p>
-                  <p className="text-text-primary font-bold">
-                    {application.payment.currency}{" "}
-                    {application.payment.amount}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-text-muted mb-0.5">Status</p>
-                  <span
-                    className={`badge ${application.payment.status === "completed"
-                      ? "badge-success"
-                      : "badge-warning"
-                      }`}
-                  >
-                    {application.payment.status}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-text-muted mb-0.5">Paid At</p>
-                  <p className="text-text-primary font-medium">
-                    {application.payment.paid_at
-                      ? new Date(
-                        application.payment.paid_at
-                      ).toLocaleString()
-                      : "—"}
-                  </p>
-                </div>
+              <div className="space-y-4">
+                {application.payments.map((payment) => (
+                  <div key={payment.id} className="border border-border rounded-lg p-3">
+                    <div className="grid sm:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-text-muted mb-0.5">Amount</p>
+                        <p className="text-text-primary font-bold">
+                          {payment.currency} {payment.amount}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-text-muted mb-0.5">Status</p>
+                        <span
+                          className={`badge ${payment.status === "completed"
+                            ? "badge-success"
+                            : "badge-warning"
+                            }`}
+                        >
+                          {payment.status}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-text-muted mb-0.5">Paid At</p>
+                        <p className="text-text-primary font-medium">
+                          {payment.paid_at
+                            ? new Date(payment.paid_at).toLocaleString()
+                            : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

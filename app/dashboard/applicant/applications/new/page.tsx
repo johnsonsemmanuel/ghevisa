@@ -8,11 +8,13 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/forms/input";
 import { VisaPreviewSidebar } from "@/components/ui/visa-preview-sidebar";
+
 import { countries } from "@/lib/countries";
 import { isEtaEligible, getEtaFee, PORTS_OF_ENTRY, DESTINATION_CITIES, VISA_DURATION_OPTIONS, ACCOMMODATION_OPTIONS } from "@/lib/visa-matrix";
 import type { VisaType, ServiceTier } from "@/lib/types";
 import { phoneCountries, getCountryByCode, formatPhoneNumber, validatePhoneNumber } from "@/lib/phone-codes";
 import { ArrowRight, ArrowLeft, Check, Monitor, Plane, Briefcase, ArrowLeftRight, Clock, TrendingUp, Crown, CheckCircle2, FileText, CreditCard, AlertTriangle, Shield, XCircle, Globe, ChevronDown, User, MapPin, Stamp, Building2, Upload, ClipboardCheck, Wallet, Landmark } from "lucide-react";
+import toast from "react-hot-toast";
 
 /* ── Step Groups for compact display ─────────────────── */
 const STEP_GROUPS = [
@@ -173,7 +175,6 @@ export default function NewApplicationPage() {
   const [emailError, setEmailError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [docs, setDocs] = useState<Record<string, File | null>>({});
-  const [paymentMethod, setPaymentMethod] = useState("paystack_card");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [etaConfirmed, setEtaConfirmed] = useState(false);
   
@@ -587,79 +588,15 @@ export default function NewApplicationPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSubmit = async () => {
-    setError(null); setSubmitting(true);
-    try {
-      // Format phone with country code
-      const selectedCountry = getCountryByCode(form.phone_country);
-      const fullPhone = form.phone ? `${selectedCountry?.dialCode}${form.phone}` : "";
-      
-      // Map frontend field names to backend field names
-      const submissionData = {
-        ...form,
-        phone: fullPhone,
-        passport_issuing_authority: form.issuing_authority, // Map issuing_authority to passport_issuing_authority
-        hotel_booking_reference: form.booking_reference, // Map booking_reference to hotel_booking_reference
-        payment_method: paymentMethod
-      };
-      
-      // Remove the frontend-only fields
-      delete (submissionData as any).issuing_authority;
-      delete (submissionData as any).booking_reference;
-      
-      // Create the application first
-      const res = await api.post(isEta ? "/applicant/eta-applications" : "/applicant/applications", submissionData);
-      const app = res.data?.application ?? res.data;
 
-      // Upload documents if any
-      if (app?.id && Object.keys(docs).length > 0) {
-        const formData = new FormData();
-        Object.entries(docs).forEach(([key, file]) => {
-          if (file) {
-            formData.append(key, file);
-          }
-        });
-        
-        try {
-          await api.post(`/applicant/applications/${app.id}/documents`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        } catch (docError) {
-          console.error('Document upload failed:', docError);
-          // Continue anyway - documents can be uploaded later
-        }
-      }
 
-      // After creating the application, send the user directly into
-      // the standard payment flow used on the application detail pages.
-      if (app?.id) {
-        router.push(`/dashboard/applicant/applications/${app.id}/payment`);
-      } else {
-        router.push("/dashboard/applicant/applications");
-      }
-    } catch (e: unknown) {
-      console.error('Application submission error:', e);
-      if (e && typeof e === 'object' && 'response' in e) {
-        const response = (e as any).response;
-        if (response?.data?.message) {
-          setError(response.data.message);
-        } else if (response?.data?.errors) {
-          const errors = Object.values(response.data.errors).flat();
-          setError(errors.join(', '));
-        } else {
-          setError(`Request failed with status code ${response?.status || 'unknown'}`);
-        }
-      } else {
-        setError(e instanceof Error ? e.message : "Submission failed");
-      }
-    } finally { setSubmitting(false); }
-  };
+
 
   const handleFile = (key: string, file: File | null) => setDocs(p => ({ ...p, [key]: file }));
   const fmtDate = (d: string) => { if (!d) return "—"; try { return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); } catch { return d; } };
 
   /* ── Nav buttons ─────────────────────────────────── */
-  function NavButtons({ isPayment }: { isPayment?: boolean }) {
+  function NavButtons() {
     const isNextDisabled = !canNext(step);
     
     return (
@@ -668,29 +605,23 @@ export default function NewApplicationPage() {
           className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${step === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-600 hover:bg-gray-100"}`}>
           <ArrowLeft size={14} /> Back
         </button>
-        {isPayment ? (
-          <Button onClick={handleSubmit} disabled={!canNext(step) || submitting} className="!rounded-lg !px-5 !py-2 !bg-green-600 hover:!bg-green-700">
-            {submitting ? "Processing..." : <><CreditCard size={14} className="mr-1.5" /> Pay ${totalFee.toFixed(2)}</>}
+        <div className="relative group">
+          <Button 
+            onClick={goNext} 
+            disabled={isNextDisabled} 
+            className={`!rounded-lg !px-5 !py-2 ${isNextDisabled ? '!opacity-50 !cursor-not-allowed' : ''}`}
+          >
+            Continue <ArrowRight size={14} className="ml-1" />
           </Button>
-        ) : (
-          <div className="relative group">
-            <Button 
-              onClick={goNext} 
-              disabled={isNextDisabled} 
-              className={`!rounded-lg !px-5 !py-2 ${isNextDisabled ? '!opacity-50 !cursor-not-allowed' : ''}`}
-            >
-              Continue <ArrowRight size={14} className="ml-1" />
-            </Button>
-            {isNextDisabled && (
-              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block">
-                <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
-                  Please fill all required fields
-                  <div className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
-                </div>
+          {isNextDisabled && (
+            <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block">
+              <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
+                Please fill all required fields
+                <div className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -1621,11 +1552,172 @@ export default function NewApplicationPage() {
 
   /* ── STEP: Review & Payment (Integrated) ─────────── */
   function renderPayment() {
-    const PAYMENT_METHODS = [
-      { id: "paystack_card", label: "Card", desc: "Visa, Mastercard", icon: <CreditCard size={16} className="text-accent" /> },
-      { id: "paystack_mobile_money", label: "Mobile Money", desc: "MTN, Vodafone, AirtelTigo", icon: <Wallet size={16} className="text-accent" /> },
-      { id: "gcb", label: "GCB Bank", desc: "Ghana Commercial Bank", icon: <Landmark size={16} className="text-accent" /> },
-    ];
+    const handlePaystackPayment = async () => {
+      setError(null); setSubmitting(true);
+      try {
+        // Format phone with country code
+        const selectedCountry = getCountryByCode(form.phone_country);
+        const fullPhone = form.phone ? `${selectedCountry?.dialCode}${form.phone}` : "";
+        
+        // Map frontend field names to backend field names
+        const submissionData = {
+          ...form,
+          phone: fullPhone,
+          passport_issuing_authority: form.issuing_authority,
+          hotel_booking_reference: form.booking_reference,
+          payment_method: "paystack_card" // Default to card payment
+        };
+        
+        // Remove the frontend-only fields
+        delete (submissionData as any).issuing_authority;
+        delete (submissionData as any).booking_reference;
+        
+        // Create the application first
+        const res = await api.post(isEta ? "/applicant/eta-applications" : "/applicant/applications", submissionData);
+        const app = res.data?.application ?? res.data;
+
+        // Upload documents if any
+        if (app?.id && Object.keys(docs).length > 0) {
+          const formData = new FormData();
+          Object.entries(docs).forEach(([key, file]) => {
+            if (file) {
+              formData.append(key, file);
+            }
+          });
+          
+          try {
+            await api.post(`/applicant/applications/${app.id}/documents`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          } catch (docError) {
+            console.error('Document upload failed:', docError);
+          }
+        }
+
+        // Initialize Paystack payment directly
+        if (app?.id) {
+          try {
+            const paymentRes = await api.post(`/applicant/applications/${app.id}/payment/initialize`, {
+              payment_method: "paystack_card",
+              currency: 'USD'
+            });
+
+            if (paymentRes.data.success && paymentRes.data.authorization_url) {
+              toast.success("Redirecting to Paystack...", { duration: 2000 });
+              window.location.href = paymentRes.data.authorization_url;
+            } else {
+              toast.success("Application created successfully!");
+              router.push(`/dashboard/applicant/applications/${app.id}`);
+            }
+          } catch (paymentError: any) {
+            console.error('Payment initialization failed:', paymentError);
+            toast.error(paymentError.response?.data?.message || "Payment initialization failed");
+            router.push(`/dashboard/applicant/applications/${app.id}`);
+          }
+        } else {
+          router.push("/dashboard/applicant/applications");
+        }
+      } catch (e: unknown) {
+        console.error('Application submission error:', e);
+        if (e && typeof e === 'object' && 'response' in e) {
+          const response = (e as any).response;
+          if (response?.data?.message) {
+            setError(response.data.message);
+          } else if (response?.data?.errors) {
+            const errors = Object.values(response.data.errors).flat();
+            setError(errors.join(', '));
+          } else {
+            setError(`Request failed with status code ${response?.status || 'unknown'}`);
+          }
+        } else {
+          setError(e instanceof Error ? e.message : "Submission failed");
+        }
+      } finally { setSubmitting(false); }
+    };
+
+    const handleGcbPayment = async () => {
+      setError(null); setSubmitting(true);
+      try {
+        // Format phone with country code
+        const selectedCountry = getCountryByCode(form.phone_country);
+        const fullPhone = form.phone ? `${selectedCountry?.dialCode}${form.phone}` : "";
+        
+        // Map frontend field names to backend field names
+        const submissionData = {
+          ...form,
+          phone: fullPhone,
+          passport_issuing_authority: form.issuing_authority,
+          hotel_booking_reference: form.booking_reference,
+          payment_method: "gcb_payment"
+        };
+        
+        // Remove the frontend-only fields
+        delete (submissionData as any).issuing_authority;
+        delete (submissionData as any).booking_reference;
+        
+        // Create the application first
+        const res = await api.post(isEta ? "/applicant/eta-applications" : "/applicant/applications", submissionData);
+        const app = res.data?.application ?? res.data;
+
+        // Upload documents if any
+        if (app?.id && Object.keys(docs).length > 0) {
+          const formData = new FormData();
+          Object.entries(docs).forEach(([key, file]) => {
+            if (file) {
+              formData.append(key, file);
+            }
+          });
+          
+          try {
+            await api.post(`/applicant/applications/${app.id}/documents`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          } catch (docError) {
+            console.error('Document upload failed:', docError);
+          }
+        }
+
+        // Initialize GCB payment directly
+        if (app?.id) {
+          try {
+            const paymentRes = await api.post(`/applicant/applications/${app.id}/payment/initialize`, {
+              payment_method: "gcb_payment",
+              currency: 'USD'
+            });
+
+            if (paymentRes.data.success && paymentRes.data.authorization_url) {
+              toast.success("Redirecting to GCB...", { duration: 2000 });
+              window.location.href = paymentRes.data.authorization_url;
+            } else {
+              toast.success("Application created successfully!");
+              router.push(`/dashboard/applicant/applications/${app.id}`);
+            }
+          } catch (paymentError: any) {
+            console.error('Payment initialization failed:', paymentError);
+            toast.error(paymentError.response?.data?.message || "Payment initialization failed");
+            router.push(`/dashboard/applicant/applications/${app.id}`);
+          }
+        } else {
+          router.push("/dashboard/applicant/applications");
+        }
+      } catch (e: unknown) {
+        console.error('Application submission error:', e);
+        if (e && typeof e === 'object' && 'response' in e) {
+          const response = (e as any).response;
+          if (response?.data?.message) {
+            setError(response.data.message);
+          } else if (response?.data?.errors) {
+            const errors = Object.values(response.data.errors).flat();
+            setError(errors.join(', '));
+          } else {
+            setError(`Request failed with status code ${response?.status || 'unknown'}`);
+          }
+        } else {
+          setError(e instanceof Error ? e.message : "Submission failed");
+        }
+      } finally { setSubmitting(false); }
+    };
+
     return (
       <section className="space-y-4">
         <div>
@@ -1658,23 +1750,6 @@ export default function NewApplicationPage() {
           </div>
         </div>
 
-        {/* Payment Method */}
-        <div>
-          <p className="text-xs font-medium text-gray-600 mb-2">Payment Method</p>
-          <div className="grid grid-cols-3 gap-2">
-            {PAYMENT_METHODS.map(m => (
-              <button key={m.id} type="button" onClick={() => setPaymentMethod(m.id)}
-                className={`flex flex-col items-center gap-2 p-2.5 rounded-lg border-2 text-center transition-all ${paymentMethod === m.id ? "border-accent bg-accent/5" : "border-gray-200 hover:border-accent/30"}`}>
-                {m.icon}
-                <div>
-                  <p className="text-xs font-medium text-gray-900">{m.label}</p>
-                  <p className="text-[10px] text-gray-500">{m.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Terms */}
         <label className="flex items-start gap-2 cursor-pointer">
           <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 rounded text-accent" />
@@ -1683,7 +1758,42 @@ export default function NewApplicationPage() {
           </span>
         </label>
 
-        <NavButtons isPayment />
+        {/* Direct Payment Buttons */}
+        <div className="space-y-3">
+          <Button 
+            onClick={handlePaystackPayment} 
+            disabled={!agreedToTerms || submitting} 
+            className="!rounded-lg !px-5 !py-3 !bg-blue-600 hover:!bg-blue-700 w-full"
+          >
+            {submitting ? "Processing..." : (
+              <>
+                <CreditCard size={16} className="mr-2" />
+                Pay with Paystack (Card/Mobile Money)
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            onClick={handleGcbPayment} 
+            disabled={!agreedToTerms || submitting} 
+            className="!rounded-lg !px-5 !py-3 !bg-green-600 hover:!bg-green-700 w-full"
+          >
+            {submitting ? "Processing..." : (
+              <>
+                <Landmark size={16} className="mr-2" />
+                Pay with GCB Bank
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+          <button type="button" disabled={step === 0} onClick={goPrev}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${step === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-600 hover:bg-gray-100"}`}>
+            <ArrowLeft size={14} /> Back
+          </button>
+        </div>
       </section>
     );
   }

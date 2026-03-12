@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ChevronLeft, ChevronRight, Inbox } from "lucide-react";
-import { Button } from "./button";
+import { Button } from "../button";
 
 interface Column<T> {
   key: string;

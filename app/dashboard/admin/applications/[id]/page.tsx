@@ -384,36 +384,40 @@ export default function AdminApplicationDetailPage() {
               <CreditCard size={18} className="text-accent" />
               <h2 className="text-lg font-semibold text-text-primary">Payment</h2>
             </div>
-            {application.payment ? (
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-text-muted">Amount</span>
-                  <span className="text-sm font-medium text-text-primary">
-                    {application.payment.currency} {application.payment.amount}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-text-muted">Status</span>
-                  <span className={`text-sm font-medium ${application.payment.status === 'completed' ? 'text-success' :
-                    application.payment.status === 'failed' ? 'text-danger' : 'text-warning'
-                    }`}>
-                    {application.payment.status.charAt(0).toUpperCase() + application.payment.status.slice(1)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-text-muted">Reference</span>
-                  <span className="text-xs font-mono text-text-primary">
-                    {application.payment.transaction_reference}
-                  </span>
-                </div>
-                {application.payment.paid_at && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-text-muted">Paid At</span>
-                    <span className="text-sm text-text-primary">
-                      {new Date(application.payment.paid_at).toLocaleString()}
-                    </span>
+            {application.payments && application.payments.length > 0 ? (
+              <div className="space-y-4">
+                {application.payments.map((payment) => (
+                  <div key={payment.id} className="border border-border rounded-lg p-3 space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-text-muted">Amount</span>
+                      <span className="text-sm font-medium text-text-primary">
+                        {payment.currency} {payment.amount}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-text-muted">Status</span>
+                      <span className={`text-sm font-medium ${payment.status === 'completed' ? 'text-success' :
+                        payment.status === 'failed' ? 'text-danger' : 'text-warning'
+                        }`}>
+                        {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-text-muted">Reference</span>
+                      <span className="text-xs font-mono text-text-primary">
+                        {payment.transaction_reference}
+                      </span>
+                    </div>
+                    {payment.paid_at && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-text-muted">Paid At</span>
+                        <span className="text-sm text-text-primary">
+                          {new Date(payment.paid_at).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
             ) : (
               <p className="text-sm text-text-muted text-center py-4">No payment record</p>

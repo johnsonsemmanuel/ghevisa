@@ -252,6 +252,7 @@ export interface Application {
   service_tier?: ServiceTier;
   documents?: ApplicationDocument[];
   payment?: Payment;
+  payments?: Payment[];
   status_history?: StatusHistoryEntry[];
   internal_notes?: InternalNote[];
   user?: Pick<User, "id" | "first_name" | "last_name" | "email">;

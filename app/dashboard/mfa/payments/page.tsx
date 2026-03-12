@@ -19,16 +19,18 @@ export default function MfaPaymentsPage() {
     queryKey: ["mfa-payments", page, status],
     queryFn: () =>
       api
-        .get<PaginatedResponse<Application>>("/mfa/escalations", {
+        .get<PaginatedResponse<Application>>("/mfa/admin/applications", {
           params: { page, per_page: 20 },
         })
         .then((r) => r.data),
   });
 
-  const payments = data?.data?.filter((app) => app.payment).map((app) => ({
-    ...app.payment!,
-    application: app,
-  })) || [];
+  const payments = data?.data?.flatMap((app) => 
+    app.payments?.map((payment) => ({
+      ...payment,
+      application: app,
+    })) || []
+  ) || [];
 
   const columns = [
     {
@@ -57,7 +59,7 @@ export default function MfaPaymentsPage() {
       header: "Amount",
       render: (row: typeof payments[0]) => (
         <p className="text-sm font-bold text-text-primary">
-          ${row.amount} <span className="text-text-muted font-normal">{row.currency}</span>
+          {row.currency} {row.amount}
         </p>
       ),
     },
@@ -115,7 +117,7 @@ export default function MfaPaymentsPage() {
             </div>
             <div>
               <p className="text-xs text-text-muted">Total Value</p>
-              <p className="text-xl font-bold text-success">${totalCollected.toFixed(2)}</p>
+              <p className="text-xl font-bold text-success">GHS {totalCollected.toFixed(2)}</p>
             </div>
           </div>
         </div>

@@ -20,17 +20,19 @@ export default function GisPaymentsPage() {
     queryKey: ["gis-payments", page, status],
     queryFn: () =>
       api
-        .get<PaginatedResponse<Application>>("/gis/cases", {
+        .get<PaginatedResponse<Application>>("/gis/admin/applications", {
           params: { page, per_page: 20 },
         })
         .then((r) => r.data),
   });
 
   // Extract payment data from applications
-  const payments = data?.data?.filter((app) => app.payment).map((app) => ({
-    ...app.payment!,
-    application: app,
-  })) || [];
+  const payments = data?.data?.flatMap((app) => 
+    app.payments?.map((payment) => ({
+      ...payment,
+      application: app,
+    })) || []
+  ) || [];
 
   const columns = [
     {
@@ -59,7 +61,7 @@ export default function GisPaymentsPage() {
       header: "Amount",
       render: (row: typeof payments[0]) => (
         <p className="text-sm font-bold text-text-primary">
-          ${row.amount} <span className="text-text-muted font-normal">{row.currency}</span>
+          {row.currency} {row.amount}
         </p>
       ),
     },
@@ -120,7 +122,7 @@ export default function GisPaymentsPage() {
               <CreditCard size={20} className="text-success" />
             </div>
             <div className="text-right">
-              <p className="text-xl font-bold text-text-primary">${totalCollected.toFixed(2)}</p>
+              <p className="text-xl font-bold text-text-primary">GHS {totalCollected.toFixed(2)}</p>
               <p className="text-[10px] text-text-muted uppercase tracking-wide">Collected</p>
             </div>
           </div>
