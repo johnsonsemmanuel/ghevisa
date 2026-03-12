@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, CreditCard, FileText, User, Clock, CheckCircle,
-  AlertCircle, Shield,
+  AlertCircle, Shield, Wallet,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Application } from "@/lib/types";
