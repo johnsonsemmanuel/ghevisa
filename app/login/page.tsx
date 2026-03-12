@@ -29,10 +29,10 @@ export default function LoginPage() {
       const loggedInUser = JSON.parse(sessionStorage.getItem("user") || "{}");
 
       // Check if user is applicant - redirect others to appropriate portals
-      const applicantRoles = ["applicant", "APPLICANT"];
+      const applicantRoles = ["applicant", "applicant"];
       if (!loggedInUser.role || !applicantRoles.includes(loggedInUser.role)) {
         sessionStorage.removeItem("user");
-        const adminRoles = ["admin", "SYSTEM_ADMIN"];
+        const adminRoles = ["admin", "admin"];
         if (adminRoles.includes(loggedInUser.role)) {
           toast.error("Please use the Admin portal to sign in.");
           router.push("/login/admin");

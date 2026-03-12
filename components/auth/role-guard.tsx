@@ -13,31 +13,17 @@ interface RoleGuardProps {
 
 const loginRoutes: Record<UserRole, string> = {
   applicant: "/login",
-  APPLICANT: "/login",
-  // GIS roles
-  GIS_REVIEWING_OFFICER: "/login/staff",
-  GIS_APPROVAL_OFFICER: "/login/staff",
-  GIS_ADMIN: "/login/staff",
-  // MFA roles
-  MFA_REVIEWING_OFFICER: "/login/staff",
-  MFA_APPROVAL_OFFICER: "/login/staff",
-  MFA_ADMIN: "/login/staff",
-  // Admin
-  SYSTEM_ADMIN: "/login/admin",
-  // Border roles
-  BORDER_OFFICER: "/login/border",
-  BORDER_SUPERVISOR: "/login/border",
-  // Airline roles
-  AIRLINE_STAFF: "/login/airline",
-  AIRLINE_ADMIN: "/login/airline",
-  // Legacy role names for backward compatibility
+  gis_reviewer: "/login/staff",
+  gis_approver: "/login/staff",
+  gis_admin: "/login/staff",
+  mfa_reviewer: "/login/staff",
+  mfa_approver: "/login/staff",
+  mfa_admin: "/login/staff",
+  admin: "/login/admin",
   border_officer: "/login/border",
   border_supervisor: "/login/border",
   airline_staff: "/login/airline",
   airline_admin: "/login/airline",
-  gis_officer: "/login/staff",
-  mfa_reviewer: "/login/staff",
-  admin: "/login/admin",
 };
 
 export function RoleGuard({ allowedRoles, children, redirectTo }: RoleGuardProps) {

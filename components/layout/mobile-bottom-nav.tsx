@@ -69,7 +69,7 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
     ],
   },
   // GIS roles - all use same navigation
-  GIS_REVIEWING_OFFICER: {
+  gis_reviewer: {
     left: [
       { label: "Home", href: "/dashboard/gis", icon: <LayoutDashboard size={20} /> },
       { label: "Cases", href: "/dashboard/gis/cases", icon: <FolderOpen size={20} /> },
@@ -80,7 +80,7 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
       { label: "Payments", href: "/dashboard/gis/payments", icon: <BarChart3 size={20} /> },
     ],
   },
-  GIS_APPROVAL_OFFICER: {
+  gis_approver: {
     left: [
       { label: "Home", href: "/dashboard/gis", icon: <LayoutDashboard size={20} /> },
       { label: "Cases", href: "/dashboard/gis/cases", icon: <FolderOpen size={20} /> },
@@ -91,7 +91,7 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
       { label: "Payments", href: "/dashboard/gis/payments", icon: <BarChart3 size={20} /> },
     ],
   },
-  GIS_ADMIN: {
+  gis_admin: {
     left: [
       { label: "Home", href: "/dashboard/gis", icon: <LayoutDashboard size={20} /> },
       { label: "Cases", href: "/dashboard/gis/cases", icon: <FolderOpen size={20} /> },
@@ -103,7 +103,7 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
     ],
   },
   // MFA roles - all use same navigation
-  MFA_REVIEWING_OFFICER: {
+  mfa_reviewer: {
     left: [
       { label: "Home", href: "/dashboard/mfa", icon: <LayoutDashboard size={20} /> },
       { label: "Cases", href: "/dashboard/mfa/escalations", icon: <AlertTriangle size={20} /> },
@@ -114,7 +114,7 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
       { label: "Profile", href: "/dashboard/mfa", icon: <User size={20} /> },
     ],
   },
-  MFA_APPROVAL_OFFICER: {
+  mfa_approver: {
     left: [
       { label: "Home", href: "/dashboard/mfa", icon: <LayoutDashboard size={20} /> },
       { label: "Cases", href: "/dashboard/mfa/escalations", icon: <AlertTriangle size={20} /> },
@@ -125,7 +125,7 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
       { label: "Profile", href: "/dashboard/mfa", icon: <User size={20} /> },
     ],
   },
-  MFA_ADMIN: {
+  mfa_admin: {
     left: [
       { label: "Home", href: "/dashboard/mfa", icon: <LayoutDashboard size={20} /> },
       { label: "Cases", href: "/dashboard/mfa/escalations", icon: <AlertTriangle size={20} /> },
@@ -137,7 +137,7 @@ const mobileNavByRole: Record<UserRole, { left: NavTab[]; right: NavTab[]; cente
     ],
   },
   // Admin
-  SYSTEM_ADMIN: {
+  admin: {
     left: [
       { label: "Home", href: "/dashboard/admin", icon: <LayoutDashboard size={20} /> },
       { label: "Users", href: "/dashboard/admin/users", icon: <Users size={20} /> },

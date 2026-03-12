@@ -8,7 +8,7 @@ export default function MfaLayout({
   children: React.ReactNode;
 }) {
   return (
-    <RoleGuard allowedRoles={["MFA_REVIEWING_OFFICER", "MFA_APPROVAL_OFFICER", "MFA_ADMIN"]} redirectTo="/login/staff">
+    <RoleGuard allowedRoles={["mfa_reviewer", "mfa_approver", "mfa_admin"]} redirectTo="/login/staff">
       {children}
     </RoleGuard>
   );

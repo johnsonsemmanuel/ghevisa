@@ -2,16 +2,7 @@
 
 export type UserRole =
   | "applicant"
-  | "APPLICANT"
-  | "GIS_REVIEWING_OFFICER"
-  | "GIS_APPROVAL_OFFICER"
-  | "GIS_ADMIN"
-  | "MFA_REVIEWING_OFFICER"
-  | "MFA_APPROVAL_OFFICER"
-  | "MFA_ADMIN"
-  | "SYSTEM_ADMIN"
-  // Database role names (current format)
-  | "gis_officer"
+  | "gis_reviewer"
   | "gis_approver"
   | "gis_admin"
   | "mfa_reviewer"

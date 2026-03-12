@@ -8,7 +8,7 @@ export default function ApplicantLayout({
   children: React.ReactNode;
 }) {
   return (
-    <RoleGuard allowedRoles={["applicant", "APPLICANT"]} redirectTo="/login">
+    <RoleGuard allowedRoles={["applicant"]} redirectTo="/login">
       {children}
     </RoleGuard>
   );

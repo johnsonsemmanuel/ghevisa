@@ -6,7 +6,7 @@ export const roleConfigs: Record<string, RoleConfig> = {
     title: "System Administration",
     subtitle: "Administration",
     icon: "settings",
-    allowedRoles: ["SYSTEM_ADMIN", "admin"],
+    allowedRoles: ["admin"],
     redirectPath: "/dashboard/admin",
     description: "Administrative access to manage users, configure tier rules, and generate system reports. Authorised personnel only.",
     features: [
@@ -82,10 +82,7 @@ export const roleConfigs: Record<string, RoleConfig> = {
     subtitle: "Staff Portal",
     icon: "users",
     allowedRoles: [
-      "GIS_REVIEWING_OFFICER", "GIS_APPROVAL_OFFICER", "GIS_ADMIN",
-      "MFA_REVIEWING_OFFICER", "MFA_APPROVAL_OFFICER", "MFA_ADMIN",
-      "SYSTEM_ADMIN",
-      "gis_officer", "gis_approver", "gis_admin",
+      "gis_reviewer", "gis_approver", "gis_admin",
       "mfa_reviewer", "mfa_approver", "mfa_admin",
       "admin", "border_officer", "border_supervisor"
     ],

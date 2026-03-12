@@ -8,7 +8,7 @@ export default function GisLayout({
   children: React.ReactNode;
 }) {
   return (
-    <RoleGuard allowedRoles={["GIS_REVIEWING_OFFICER", "GIS_APPROVAL_OFFICER", "GIS_ADMIN"]} redirectTo="/login/staff">
+    <RoleGuard allowedRoles={["gis_reviewer", "gis_approver", "gis_admin"]} redirectTo="/login/staff">
       {children}
     </RoleGuard>
   );

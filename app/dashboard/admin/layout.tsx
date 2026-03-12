@@ -8,7 +8,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <RoleGuard allowedRoles={["SYSTEM_ADMIN"]} redirectTo="/login/admin">
+    <RoleGuard allowedRoles={["admin"]} redirectTo="/login/admin">
       {children}
     </RoleGuard>
   );

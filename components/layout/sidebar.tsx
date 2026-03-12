@@ -46,21 +46,21 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Profile", href: "/dashboard/applicant/profile", icon: <User size={20} /> },
   ],
   // GIS roles - all use same navigation
-  GIS_REVIEWING_OFFICER: [
+  gis_reviewer: [
     { label: "Dashboard", href: "/dashboard/gis", icon: <LayoutDashboard size={20} /> },
     { label: "Case Queue", href: "/dashboard/gis/cases", icon: <FolderOpen size={20} /> },
     { label: "Support", href: "/dashboard/gis/support", icon: <HelpCircle size={20} /> },
     { label: "SLA Alerts", href: "/dashboard/gis/sla-alerts", icon: <AlertTriangle size={20} /> },
     { label: "Payments", href: "/dashboard/gis/payments", icon: <BarChart3 size={20} /> },
   ],
-  GIS_APPROVAL_OFFICER: [
+  gis_approver: [
     { label: "Dashboard", href: "/dashboard/gis", icon: <LayoutDashboard size={20} /> },
     { label: "Case Queue", href: "/dashboard/gis/cases", icon: <FolderOpen size={20} /> },
     { label: "Support", href: "/dashboard/gis/support", icon: <HelpCircle size={20} /> },
     { label: "SLA Alerts", href: "/dashboard/gis/sla-alerts", icon: <AlertTriangle size={20} /> },
     { label: "Payments", href: "/dashboard/gis/payments", icon: <BarChart3 size={20} /> },
   ],
-  GIS_ADMIN: [
+  gis_admin: [
     { label: "Admin Overview", href: "/dashboard/gis/admin", icon: <LayoutDashboard size={20} /> },
     { label: "Applicants", href: "/dashboard/gis/admin/applicants", icon: <Users size={20} /> },
     { label: "Officers", href: "/dashboard/gis/admin/officers", icon: <Shield size={20} /> },
@@ -71,17 +71,17 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "SLA Alerts", href: "/dashboard/gis/sla-alerts", icon: <AlertTriangle size={20} /> },
   ],
   // MFA roles - all use same navigation
-  MFA_REVIEWING_OFFICER: [
+  mfa_reviewer: [
     { label: "Dashboard", href: "/dashboard/mfa", icon: <LayoutDashboard size={20} /> },
     { label: "Escalations", href: "/dashboard/mfa/escalations", icon: <AlertTriangle size={20} /> },
     { label: "Payments", href: "/dashboard/mfa/payments", icon: <BarChart3 size={20} /> },
   ],
-  MFA_APPROVAL_OFFICER: [
+  mfa_approver: [
     { label: "Dashboard", href: "/dashboard/mfa", icon: <LayoutDashboard size={20} /> },
     { label: "Escalations", href: "/dashboard/mfa/escalations", icon: <AlertTriangle size={20} /> },
     { label: "Payments", href: "/dashboard/mfa/payments", icon: <BarChart3 size={20} /> },
   ],
-  MFA_ADMIN: [
+  mfa_admin: [
     { label: "Admin Overview", href: "/dashboard/mfa/admin", icon: <LayoutDashboard size={20} /> },
     { label: "Applicants", href: "/dashboard/mfa/admin/applicants", icon: <Users size={20} /> },
     { label: "Officers", href: "/dashboard/mfa/admin/officers", icon: <Shield size={20} /> },
@@ -91,7 +91,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Payments", href: "/dashboard/mfa/payments", icon: <BarChart3 size={20} /> },
   ],
   // Admin
-  SYSTEM_ADMIN: [
+  admin: [
     { label: "Overview", href: "/dashboard/admin", icon: <LayoutDashboard size={20} /> },
     { label: "Users", href: "/dashboard/admin/users", icon: <Users size={20} /> },
     { label: "Applications", href: "/dashboard/admin/applications", icon: <FileText size={20} /> },
@@ -109,23 +109,23 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: "Audit Logs", href: "/dashboard/admin/reports/audit-logs", icon: <FileText size={20} /> },
   ],
   // Border roles
-  BORDER_OFFICER: [
+  border_officer: [
     { label: "Verification Portal", href: "/dashboard/border", icon: <Shield size={20} /> },
     { label: "Operations", href: "/dashboard/border/operations", icon: <BarChart3 size={20} /> },
     { label: "Reports", href: "/dashboard/border/reports", icon: <FileText size={20} /> },
   ],
-  BORDER_SUPERVISOR: [
+  border_supervisor: [
     { label: "Verification Portal", href: "/dashboard/border", icon: <Shield size={20} /> },
     { label: "Operations", href: "/dashboard/border/operations", icon: <BarChart3 size={20} /> },
     { label: "Reports", href: "/dashboard/border/reports", icon: <FileText size={20} /> },
   ],
   // Airline roles
-  AIRLINE_STAFF: [
+  airline_staff: [
     { label: "Verification Portal", href: "/dashboard/airline", icon: <Shield size={20} /> },
     { label: "Operations", href: "/dashboard/airline/operations", icon: <BarChart3 size={20} /> },
     { label: "Reports", href: "/dashboard/airline/reports", icon: <FileText size={20} /> },
   ],
-  AIRLINE_ADMIN: [
+  airline_admin: [
     { label: "Verification Portal", href: "/dashboard/airline", icon: <Shield size={20} /> },
     { label: "Operations", href: "/dashboard/airline/operations", icon: <BarChart3 size={20} /> },
     { label: "Reports", href: "/dashboard/airline/reports", icon: <FileText size={20} /> },
@@ -187,21 +187,21 @@ const roleLabels: Record<UserRole, string> = {
   applicant: "Applicant",
   APPLICANT: "Applicant",
   // GIS roles
-  GIS_REVIEWING_OFFICER: "GIS Reviewing Officer",
-  GIS_APPROVAL_OFFICER: "GIS Approval Officer",
-  GIS_ADMIN: "GIS Administrator",
+  gis_reviewer: "GIS Reviewing Officer",
+  gis_approver: "GIS Approval Officer",
+  gis_admin: "GIS Administrator",
   // MFA roles
-  MFA_REVIEWING_OFFICER: "MFA Reviewing Officer",
-  MFA_APPROVAL_OFFICER: "MFA Approval Officer",
-  MFA_ADMIN: "MFA Administrator",
+  mfa_reviewer: "MFA Reviewing Officer",
+  mfa_approver: "MFA Approval Officer",
+  mfa_admin: "MFA Administrator",
   // Admin
-  SYSTEM_ADMIN: "System Administrator",
+  admin: "System Administrator",
   // Border roles
-  BORDER_OFFICER: "Border Officer",
-  BORDER_SUPERVISOR: "Border Supervisor",
+  border_officer: "Border Officer",
+  border_supervisor: "Border Supervisor",
   // Airline roles
-  AIRLINE_STAFF: "Airline Staff",
-  AIRLINE_ADMIN: "Airline Administrator",
+  airline_staff: "Airline Staff",
+  airline_admin: "Airline Administrator",
   // Legacy role names for backward compatibility
   border_officer: "Border Officer",
   border_supervisor: "Border Supervisor",
