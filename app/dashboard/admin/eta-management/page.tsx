@@ -174,9 +174,9 @@ export default function EtaManagementPage() {
                   {performanceStats.current_hour?.average_response_time || 0}s
                 </p>
                 <Badge variant={
-                  (performanceStats.current_hour?.average_response_time || 0) < 1 ? 'default' : 
-                  (performanceStats.current_hour?.average_response_time || 0) < 2 ? 'secondary' : 
-                  'destructive'
+                  (performanceStats.current_hour?.average_response_time || 0) < 1 ? 'success' : 
+                  (performanceStats.current_hour?.average_response_time || 0) < 2 ? 'warning' : 
+                  'danger'
                 }>
                   {performanceStats.performance_status?.status || 'unknown'}
                 </Badge>
