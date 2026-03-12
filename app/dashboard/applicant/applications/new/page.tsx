@@ -638,7 +638,20 @@ export default function NewApplicationPage() {
         router.push("/dashboard/applicant/applications");
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Submission failed");
+      console.error('Application submission error:', e);
+      if (e && typeof e === 'object' && 'response' in e) {
+        const response = (e as any).response;
+        if (response?.data?.message) {
+          setError(response.data.message);
+        } else if (response?.data?.errors) {
+          const errors = Object.values(response.data.errors).flat();
+          setError(errors.join(', '));
+        } else {
+          setError(`Request failed with status code ${response?.status || 'unknown'}`);
+        }
+      } else {
+        setError(e instanceof Error ? e.message : "Submission failed");
+      }
     } finally { setSubmitting(false); }
   };
 
