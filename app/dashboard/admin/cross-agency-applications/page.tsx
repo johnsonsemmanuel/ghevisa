@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { ApplicationStatus } from '@/lib/types';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/display/badge';
@@ -207,7 +208,7 @@ export default function CrossAgencyApplicationsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={app.status} />
+                        <StatusBadge status={app.status as ApplicationStatus} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(app.submitted_at).toLocaleDateString()}
