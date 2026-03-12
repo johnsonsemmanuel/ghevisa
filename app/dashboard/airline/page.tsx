@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { QRScanner } from "@/components/ui/qr-scanner";
+import { Input } from "@/components/ui/forms/input";
+import { Select } from "@/components/ui/forms/select";
+import { QRScanner } from "@/components/ui/forms/qr-scanner";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { 

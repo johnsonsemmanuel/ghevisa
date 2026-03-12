@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/forms/input";
 import { CardSkeleton } from "@/components/ui/skeleton";
 
 import { ArrowLeft, Save, User, Shield, Mail, Phone, Calendar, Activity } from "lucide-react";

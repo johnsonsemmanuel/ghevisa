@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/forms/input";
 import { ArrowLeft, Mail, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 

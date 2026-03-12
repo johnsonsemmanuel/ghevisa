@@ -5,9 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Card } from "@/components/ui/card";
-import { Select } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
+import { Card } from "@/components/ui/display/card";
+import { Select } from "@/components/ui/forms/input";
+import { DataTable } from "@/components/ui/display/data-table";
 import { CheckCircle2, XCircle, Clock, CreditCard } from "lucide-react";
 import type { Application, PaginatedResponse } from "@/lib/types";
 

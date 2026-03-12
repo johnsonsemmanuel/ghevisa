@@ -5,9 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
+import { StatusBadge, SlaIndicator } from "@/components/ui/display/badge";
 import { CardSkeleton } from "@/components/ui/skeleton";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload } from "@/components/ui/forms/file-upload";
 import {
   ArrowLeft, Download, FileText, Clock, User, Plane,
   CreditCard, Upload, Eye, Edit, CheckCircle2, Shield, MessageSquare,

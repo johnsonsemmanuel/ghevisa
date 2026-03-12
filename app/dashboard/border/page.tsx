@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { QRScanner } from "@/components/ui/qr-scanner";
+import { Input } from "@/components/ui/forms/input";
+import { Select } from "@/components/ui/forms/select";
+import { QRScanner } from "@/components/ui/forms/qr-scanner";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { 
@@ -37,6 +37,17 @@ interface PassportValidation {
   months_remaining?: number;
 }
 
+interface ExternalVerification {
+  success: boolean;
+  source: string;
+  status: string;
+  details?: {
+    issuing_state?: string;
+    number?: string;
+    nationality?: string;
+  };
+}
+
 export default function BorderPortalPage() {
   const [passportNumber, setPassportNumber] = useState("");
   const [nationality, setNationality] = useState("");
@@ -49,6 +60,7 @@ export default function BorderPortalPage() {
   const [entryConfirmed, setEntryConfirmed] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [passportValidation, setPassportValidation] = useState<PassportValidation | null>(null);
+  const [externalVerification, setExternalVerification] = useState<ExternalVerification | null>(null);
   const [validatingPassport, setValidatingPassport] = useState(false);
 
   // Validate passport when passport number changes
@@ -56,6 +68,7 @@ export default function BorderPortalPage() {
     const validatePassport = async () => {
       if (!passportNumber || passportNumber.length < 6) {
         setPassportValidation(null);
+        setExternalVerification(null);
         return;
       }
 
@@ -72,9 +85,11 @@ export default function BorderPortalPage() {
         });
 
         setPassportValidation(response.data.expiry_check);
+        setExternalVerification(response.data.external_verification);
       } catch (error) {
         console.error("Passport validation error:", error);
         setPassportValidation(null);
+        setExternalVerification(null);
       } finally {
         setValidatingPassport(false);
       }
@@ -165,6 +180,7 @@ export default function BorderPortalPage() {
     setResult(null);
     setEntryConfirmed(false);
     setPassportValidation(null);
+    setExternalVerification(null);
   };
 
   const handleScanQR = () => {
@@ -294,19 +310,34 @@ export default function BorderPortalPage() {
                       <p className="text-[11px] text-text-muted mt-1">Validating...</p>
                     )}
                     {passportValidation && (
-                      <div className={`flex items-center gap-1 mt-1 text-[11px] ${
-                        passportValidation.valid 
-                          ? passportValidation.code === 'near_expiry' ? 'text-warning' : 'text-success'
-                          : 'text-danger'
-                      }`}>
-                        {passportValidation.valid ? (
-                          passportValidation.code === 'near_expiry' ? (
-                            <><AlertCircleIcon size={12} /> {passportValidation.message}</>
+                      <div className="mt-1 space-y-1">
+                        <div className={`flex items-center gap-1 text-[11px] ${
+                          passportValidation.valid 
+                            ? passportValidation.code === 'near_expiry' ? 'text-warning' : 'text-success'
+                            : 'text-danger'
+                        }`}>
+                          {passportValidation.valid ? (
+                            passportValidation.code === 'near_expiry' ? (
+                              <><AlertCircleIcon size={12} /> {passportValidation.message}</>
+                            ) : (
+                              <><CheckCircle2 size={12} /> Valid passport</>
+                            )
                           ) : (
-                            <><CheckCircle2 size={12} /> Valid passport</>
-                          )
-                        ) : (
-                          <><XCircle size={12} /> {passportValidation.message}</>
+                            <><XCircle size={12} /> {passportValidation.message}</>
+                          )}
+                        </div>
+                        {externalVerification && (
+                          <div className={`flex items-center gap-1 text-[11px] ${
+                            externalVerification.success && externalVerification.status === 'valid'
+                              ? 'text-success'
+                              : 'text-danger'
+                          }`}>
+                            {externalVerification.success && externalVerification.status === 'valid' ? (
+                              <><CheckCircle2 size={12} /> Verified with {externalVerification.source}</>
+                            ) : (
+                              <><XCircle size={12} /> Verification failed: {externalVerification.status}</>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
@@ -380,7 +411,7 @@ export default function BorderPortalPage() {
                 <div className="flex gap-2 pt-1">
                   <Button
                     onClick={handleVerify}
-                    disabled={loading || !passportNumber || !nationality || (passportValidation && !passportValidation.valid)}
+                    disabled={loading || !passportNumber || !nationality || (passportValidation !== null && !passportValidation.valid)}
                     size="sm"
                     className="flex-1"
                   >
@@ -411,10 +442,10 @@ export default function BorderPortalPage() {
               <div className="card p-4">
                 <div className="text-center mb-4">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-surface mb-3">
-                    {getStatusIcon(result.status)}
+                    {getStatusIcon(result.status || "ERROR")}
                   </div>
-                  <h3 className={`text-xl font-bold mb-1 ${getStatusColor(result.status)}`}>
-                    {result.status.replace(/_/g, " ")}
+                  <h3 className={`text-xl font-bold mb-1 ${getStatusColor(result.status || "ERROR")}`}>
+                    {(result.status || "ERROR").replace(/_/g, " ")}
                   </h3>
                   <p className="text-xs text-text-secondary">{result.message}</p>
                 </div>

@@ -7,11 +7,11 @@ import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
+import { StatusBadge, SlaIndicator } from "@/components/ui/display/badge";
 
 import { Timeline } from "@/components/ui/timeline";
-import { Modal } from "@/components/ui/modal";
-import { Textarea } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modals/modal";
+import { Textarea } from "@/components/ui/forms/input";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ReasonCodeSelector } from "@/components/ui/reason-code-selector";
 import { MultiReasonSelector } from "@/components/ui/multi-reason-selector";

@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
+import { StatusBadge, SlaIndicator } from "@/components/ui/display/badge";
 import { Timeline } from "@/components/ui/timeline";
 
 import { CardSkeleton } from "@/components/ui/skeleton";

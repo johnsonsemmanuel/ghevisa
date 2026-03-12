@@ -5,9 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Card } from "@/components/ui/card";
+import { Card } from "@/components/ui/display/card";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/input";
+import { Select } from "@/components/ui/forms/input";
 import {
     MessageSquare,
     ArrowRight,

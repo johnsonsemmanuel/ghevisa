@@ -5,8 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { DataTable } from "@/components/ui/data-table";
-import { StatusBadge } from "@/components/ui/badge";
+import { DataTable } from "@/components/ui/display/data-table";
+import { StatusBadge } from "@/components/ui/display/badge";
 import type { AgencyApplicantSummary, PaginatedResponse } from "@/lib/types";
 import { Search, Users } from "lucide-react";
 

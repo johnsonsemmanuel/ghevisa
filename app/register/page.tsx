@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/forms/input";
 import { ArrowLeft, Shield, Clock, Globe2, ChevronRight, Check } from "lucide-react";
 import toast from "react-hot-toast";
 

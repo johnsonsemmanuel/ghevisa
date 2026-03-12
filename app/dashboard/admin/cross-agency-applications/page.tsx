@@ -7,7 +7,7 @@ import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/display/badge';
 import { Building2, FileText, Filter, Search, ArrowRight } from 'lucide-react';
 
 interface Application {

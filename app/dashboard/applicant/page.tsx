@@ -7,9 +7,9 @@ import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/display/badge";
 import { MetricsSkeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
+import { Card } from "@/components/ui/display/card";
 import {
   Plus, FileText, Clock, CheckCircle2, AlertCircle, HelpCircle,
   ArrowRight, Plane, ChevronRight, Inbox, X, TrendingUp,

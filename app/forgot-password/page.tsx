@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/forms/input";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 

@@ -5,9 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { DataTable } from "@/components/ui/data-table";
-import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
-import { Input, Select } from "@/components/ui/input";
+import { DataTable } from "@/components/ui/display/data-table";
+import { StatusBadge, SlaIndicator } from "@/components/ui/display/badge";
+import { Input, Select } from "@/components/ui/forms/input";
 import type { Application, PaginatedResponse } from "@/lib/types";
 import { Search } from "lucide-react";
 

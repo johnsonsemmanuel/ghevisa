@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
-import { StatusBadge } from "@/components/ui/badge";
+import { DataTable } from "@/components/ui/display/data-table";
+import { StatusBadge } from "@/components/ui/display/badge";
 import { Plus, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
 import type { Application, PaginatedResponse } from "@/lib/types";
-import { Modal } from "@/components/ui/modal";
+import { Modal } from "@/components/ui/modals/modal";
 
 export default function ApplicationsListPage() {
   const router = useRouter();

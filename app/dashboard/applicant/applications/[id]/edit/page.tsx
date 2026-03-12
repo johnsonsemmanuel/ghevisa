@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Input, Select, Textarea } from "@/components/ui/input";
+import { Input, Select, Textarea } from "@/components/ui/forms/input";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Save, AlertTriangle, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";

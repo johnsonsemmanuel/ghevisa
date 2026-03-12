@@ -6,7 +6,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/forms/input";
 import { VisaPreviewSidebar } from "@/components/ui/visa-preview-sidebar";
 import { countries } from "@/lib/countries";
 import { isEtaEligible, getEtaFee, PORTS_OF_ENTRY, DESTINATION_CITIES, VISA_DURATION_OPTIONS, ACCOMMODATION_OPTIONS } from "@/lib/visa-matrix";
@@ -175,6 +175,7 @@ export default function NewApplicationPage() {
   const [docs, setDocs] = useState<Record<string, File | null>>({});
   const [paymentMethod, setPaymentMethod] = useState("paystack_card");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [etaConfirmed, setEtaConfirmed] = useState(false);
   
   // Passport verification state
   const [passportVerifying, setPassportVerifying] = useState(false);
@@ -311,10 +312,18 @@ export default function NewApplicationPage() {
 
   /* ── Nationality check for ETA ───────────────────── */
   useEffect(() => {
-    if (!form.nationality) return;
+    if (!form.nationality) {
+      setEtaConfirmed(false);
+      return;
+    }
     const eligible = isEtaEligible(form.nationality);
-    if (eligible && form.authorization_type !== "eta") set("authorization_type", "eta");
-    else if (!eligible && form.authorization_type !== "evisa") set("authorization_type", "evisa");
+    if (eligible && form.authorization_type !== "eta") {
+      set("authorization_type", "eta");
+      setEtaConfirmed(false); // Reset confirmation when nationality changes to ETA-eligible
+    } else if (!eligible && form.authorization_type !== "evisa") {
+      set("authorization_type", "evisa");
+      setEtaConfirmed(true); // No confirmation needed for regular visa
+    }
   }, [form.nationality, form.authorization_type, set]);
 
   /* ── Auto-select online visa channel ───────────────── */
@@ -391,7 +400,7 @@ export default function NewApplicationPage() {
 
     if (isEta) {
       switch (s) {
-        case 0: return !!form.visa_channel;
+        case 0: return !!form.visa_channel && etaConfirmed; // Require ETA confirmation
         case 1: {
           // Applicant Details - All required fields
           const checks = {
@@ -598,8 +607,28 @@ export default function NewApplicationPage() {
       delete (submissionData as any).issuing_authority;
       delete (submissionData as any).booking_reference;
       
+      // Create the application first
       const res = await api.post(isEta ? "/applicant/eta-applications" : "/applicant/applications", submissionData);
       const app = res.data?.application ?? res.data;
+
+      // Upload documents if any
+      if (app?.id && Object.keys(docs).length > 0) {
+        const formData = new FormData();
+        Object.entries(docs).forEach(([key, file]) => {
+          if (file) {
+            formData.append(key, file);
+          }
+        });
+        
+        try {
+          await api.post(`/applicant/applications/${app.id}/documents`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+        } catch (docError) {
+          console.error('Document upload failed:', docError);
+          // Continue anyway - documents can be uploaded later
+        }
+      }
 
       // After creating the application, send the user directly into
       // the standard payment flow used on the application detail pages.
@@ -686,6 +715,77 @@ export default function NewApplicationPage() {
 
   /* ── STEP: Visa Channel ──────────────────────────── */
   function renderChannel() {
+    // Show ETA confirmation modal if ETA eligible and not yet confirmed
+    if (isEta && !etaConfirmed) {
+      return (
+        <section className="space-y-6">
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={32} className="text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Great News! You're Eligible for ETA</h2>
+            <p className="text-sm text-gray-600 max-w-md mx-auto">
+              As a citizen of <strong>{countries.find(c => c.code === form.nationality)?.name}</strong>, 
+              you don't need a full visa. You can apply for a simplified Electronic Travel Authorization (ETA) instead.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border-2 border-green-200 p-6 max-w-md mx-auto">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                  <Clock size={20} className="text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Fast Processing</h3>
+                  <p className="text-xs text-gray-600">Get approved quickly with our streamlined ETA process</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                  <FileText size={20} className="text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Simplified Form</h3>
+                  <p className="text-xs text-gray-600">Fewer requirements and easier application process</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                  <CreditCard size={20} className="text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Affordable Fee</h3>
+                  <p className="text-xs text-gray-600">Lower cost compared to traditional visa applications</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 max-w-md mx-auto">
+            <Button 
+              onClick={() => setEtaConfirmed(true)} 
+              className="!rounded-lg !py-3 !bg-green-600 hover:!bg-green-700 w-full"
+            >
+              Continue to ETA Form <ArrowRight size={16} className="ml-2" />
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                set("nationality", "");
+                set("authorization_type", "");
+              }}
+              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              ← Change Nationality
+            </button>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section className="space-y-4">
         <div>
@@ -941,6 +1041,8 @@ export default function NewApplicationPage() {
             </FormField>
           </div>
         </div>
+
+
 
         {/* Passport Information */}
         <div className="space-y-3 pt-3 border-t border-gray-200">
@@ -1575,7 +1677,21 @@ export default function NewApplicationPage() {
 
   /* ── Main return ─────────────────────────────────── */
   return (
-    <DashboardShell title="New Application" description="">
+    <DashboardShell 
+      title={isEta ? "Electronic Travel Authorization (ETA)" : "New Application"} 
+      description={isEta ? "Simplified application for visa-free travelers" : ""}
+    >
+      {/* ETA Badge */}
+      {isEta && (
+        <div className="max-w-7xl mx-auto px-4 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200">
+            <Plane size={14} className="text-green-600" />
+            <span className="text-xs font-semibold text-green-700">ETA Application</span>
+            <span className="text-[10px] text-green-600">• Fast Track Processing</span>
+          </div>
+        </div>
+      )}
+      
       {/* Compact Progress Bar */}
       <div className="mb-6 max-w-7xl mx-auto px-4">
         <div className="flex items-center gap-1 mb-2">

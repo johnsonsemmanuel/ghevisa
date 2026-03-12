@@ -5,9 +5,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Input, Textarea, Select } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
-import { Modal } from "@/components/ui/modal";
+import { Input, Textarea, Select } from "@/components/ui/forms/input";
+import { DataTable } from "@/components/ui/display/data-table";
+import { Modal } from "@/components/ui/modals/modal";
 import { Plus, Edit, Trash2, Eye, EyeOff, DollarSign, Clock, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 

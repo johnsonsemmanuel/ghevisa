@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/forms/input";
 import { AlertTriangle, CheckCircle2, User, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 

@@ -6,7 +6,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Input, Textarea, Select } from "@/components/ui/input";
+import { Input, Textarea, Select } from "@/components/ui/forms/input";
 import {
   HelpCircle,
   MessageSquare,

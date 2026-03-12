@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/forms/input";
 import { User, Mail, Phone, Lock, Save, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 

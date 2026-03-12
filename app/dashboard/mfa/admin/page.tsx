@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/display/badge";
 import { MetricsSkeleton } from "@/components/ui/skeleton";
 import type {
   AgencyAdminMetrics,

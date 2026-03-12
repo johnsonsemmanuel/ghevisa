@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
-import { StatusBadge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/forms/input";
+import { DataTable } from "@/components/ui/display/data-table";
+import { StatusBadge } from "@/components/ui/display/badge";
 import { Search, FileText, Filter, Download } from "lucide-react";
 import type { Application, PaginatedResponse } from "@/lib/types";
 

@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Select } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
-import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/forms/input";
+import { DataTable } from "@/components/ui/display/data-table";
+import { Badge } from "@/components/ui/display/badge";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import {
   BarChart3,

@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from "@/components/ui/display/data-table";
 import type { AgencyOfficerSummary, PaginatedResponse } from "@/lib/types";
 import { Search, Shield } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Select, Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/display/badge";
+import { Select, Input } from "@/components/ui/forms/input";
 
 export default function MfaAdminOfficersPage() {
   const [page, setPage] = useState(1);

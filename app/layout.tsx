@@ -7,7 +7,7 @@ import "@fontsource/poppins/700.css";
 import "@fontsource/poppins/800.css";
 import "./globals.css";
 import { Providers } from "./providers";
-import CookieConsent from "@/components/ui/cookie-consent";
+import CookieConsent from "@/components/ui/layout/cookie-consent";
 
 const poppins = Poppins({
   subsets: ["latin"],

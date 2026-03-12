@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { X, Camera, AlertCircle, Upload } from "lucide-react";
-import { Button } from "./button";
+import { Button } from "../button";
 
 interface QRScannerProps {
   onScan: (data: string) => void;

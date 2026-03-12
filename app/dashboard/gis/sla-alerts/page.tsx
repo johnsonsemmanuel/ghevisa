@@ -4,9 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Card } from "@/components/ui/card";
-import { DataTable } from "@/components/ui/data-table";
-import { StatusBadge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/display/card";
+import { DataTable } from "@/components/ui/display/data-table";
+import { StatusBadge } from "@/components/ui/display/badge";
 import { AlertTriangle, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 import type { Application } from "@/lib/types";
 

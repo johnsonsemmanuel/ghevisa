@@ -7,9 +7,9 @@ import api from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { StatusBadge, SlaIndicator } from "@/components/ui/badge";
+import { StatusBadge, SlaIndicator } from "@/components/ui/display/badge";
 import { MetricsSkeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
+import { Card } from "@/components/ui/display/card";
 import {
   FolderOpen,
   Clock,

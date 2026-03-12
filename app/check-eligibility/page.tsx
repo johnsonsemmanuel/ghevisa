@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/input";
+import { Select } from "@/components/ui/forms/input";
 import { countries } from "@/lib/countries";
 import { Globe, CheckCircle, XCircle, AlertTriangle, ArrowRight, Home } from "lucide-react";
 import api from "@/lib/api";

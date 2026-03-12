@@ -5,8 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
+import { Select } from "@/components/ui/forms/input";
+import { DataTable } from "@/components/ui/display/data-table";
 import { CheckCircle2, XCircle, Clock, CreditCard, DollarSign, Download } from "lucide-react";
 import type { Payment, PaginatedResponse } from "@/lib/types";
 
