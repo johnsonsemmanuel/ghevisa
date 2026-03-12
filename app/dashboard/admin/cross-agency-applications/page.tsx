@@ -41,8 +41,8 @@ export default function CrossAgencyApplicationsPage() {
 
   // Determine which agency's applications to show
   // GIS admins see MFA applications, MFA admins see GIS applications
-  const targetAgency = user?.agency === 'gis' ? 'mfa' : 'gis';
-  const agencyLabel = targetAgency === 'mfa' ? 'MFA' : 'GIS';
+  const targetAgency = user?.agency === 'GIS' ? 'MFA' : 'GIS';
+  const agencyLabel = targetAgency === 'MFA' ? 'MFA' : 'GIS';
 
   const { data, isLoading } = useQuery({
     queryKey: ['cross-agency-applications', targetAgency, page, statusFilter, searchTerm],
